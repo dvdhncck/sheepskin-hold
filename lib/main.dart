@@ -10,26 +10,26 @@ import 'package:workmanager/workmanager.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 import "dart:math";
 
-var outerLimits = OuterLimits();
-
-SheepSkin sheepSkin = SheepSkin(outerLimits);
+final SheepSkin sheepSkin = SheepSkin();
 
 void main() {
-
-  runApp(outerLimits);
+  runApp(sheepSkin.outerLimits);
 }
-
-//var sheepSkinOptionsWidget = SheepSkinOptionsWidget();
 
 void periodicTaskCallback() {
   print('hello sailor');
-//  if (schedulingWidgetState != null) {
-  // look like we were called before the rest of the application had initialized
-  //sheepSkinSchedulingWidgetState.doPeriodicUpdate();
-  //}
+  sheepSkin.doPeriodicUpdate();
+}
+
+class LogMessage {
+  String timestamp;
+  String message;
+
+  LogMessage(this.timestamp, this.message);
 }
 
 class SheepSkin {
@@ -59,12 +59,15 @@ class SheepSkin {
 
   OuterLimits outerLimits;
 
-  SheepSkin(this.outerLimits) {
+  final DateFormat formatter = DateFormat('yyyy-MM-dd H:m:s');
+  final List<LogMessage> logEntryList = [];
+
+  SheepSkin() {
+    outerLimits = new OuterLimits(this);
     overlayDefaultValues();
     loadState();
 
     workManager.initialize(periodicTaskCallback, isInDebugMode: false);
-
     workManager.registerPeriodicTask(
       "update",
       "kindly do an update",
@@ -74,31 +77,18 @@ class SheepSkin {
     addMessage('Started');
   }
 
-  List<String> messageList = [];
-
   void addMessage(String message) {
-    messageList.add(message);
-    debugWidgetState.rebuild();
+    var dateTime = DateTime.now();
+    final String formatted = formatter.format(dateTime);
+
+    print(formatted + " : " + message);
+
+    logEntryList.add(LogMessage(formatted, message));
   }
 
   void doPeriodicUpdate() {
+    addMessage('doPeriodicUpdate');
     changeWallpaper();
-
-    // setState(() {
-    //   //lastUpdateTimestamp = DateTime.now();
-    // });
-
-    // workManager.executeTask((taskName, inputData) {
-    //   switch (taskName) {
-    //     case "":
-    //       changeWallpaper();
-    //       setState(() {
-    //         lastUpdateTimestamp = DateTime.now();
-    //       });
-    //       break;
-    //   }
-    //   return Future.value(true);
-    // });
   }
 
   void displayFilePickerForFolderSelection() async {
@@ -137,7 +127,7 @@ class SheepSkin {
       Directory dir = Directory(path);
       try {
         List<FileSystemEntity> entities =
-        await dir.list(recursive: true).toList();
+            await dir.list(recursive: true).toList();
         // print(entities);
         for (var entity in entities) {
           if (entity is File) {
@@ -159,13 +149,9 @@ class SheepSkin {
       imageCount += "(some bad)";
     }
 
-    folderPickingWidgetState.rebuild();
-
-    print("onPathChanged() completed, saving state.");
+    // print("onPathChanged() completed, saving state.");
 
     persistState();
-
-    folderPickingWidgetState.rebuild();
   }
 
   void onScheduleChanged() async {
@@ -175,18 +161,25 @@ class SheepSkin {
   Future<String> pickImage() async {
     List<File> candidates = [];
     for (final path in paths) {
-      Directory dir = Directory(path);
-      List<FileSystemEntity> entities =
-      await dir.list(recursive: true).toList();
-      // print(entities);
-      for (var entity in entities) {
-        if (entity is File) {
-          String mimeType = lookupMimeType(entity.path);
-          if (mimeType.startsWith('image/')) {
-            candidates.add(entity);
+      try {
+        Directory dir = Directory(path);
+        List<FileSystemEntity> entities =
+            await dir.list(recursive: true).toList();
+        // print(entities);
+        for (var entity in entities) {
+          if (entity is File) {
+            String mimeType = lookupMimeType(entity.path);
+            if (mimeType.startsWith('image/')) {
+              candidates.add(entity);
+            }
           }
         }
+      } catch (e) {
+        print(e);
       }
+    }
+    if (candidates.isEmpty) {
+      return null;
     }
     final _random = new Random();
     var theChosenOne = candidates[_random.nextInt(candidates.length)];
@@ -205,15 +198,19 @@ class SheepSkin {
   }
 
   void changeWallpaper() async {
-    outerLimits.showSnackBar();
     String wallpaper = await pickImage();
+    if (wallpaper == null) {
+      addMessage('Unable to find any images');
+      return;
+    }
     int location = decodeDestination();
     try {
+      addMessage('Setting wallpaper on ' + destination);
       await WallpaperManager.setWallpaperFromFile(wallpaper, location);
+      ScaffoldMessengerState().removeCurrentSnackBar();
     } on PlatformException catch (e) {
-      print('Failed to get wallpaper: ' + e.toString());
+      addMessage('Failed to get wallpaper: ' + e.toString());
     }
-    ScaffoldMessengerState().removeCurrentSnackBar();
   }
 
   void overlayDefaultValues() {
@@ -255,6 +252,9 @@ class SheepSkin {
 //final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
 class OuterLimits extends StatelessWidget {
+  final SheepSkin sheepSkin;
+
+  OuterLimits(this.sheepSkin);
 
   @override
   Widget build(BuildContext context) {
@@ -276,23 +276,18 @@ class OuterLimits extends StatelessWidget {
                 ),
                 body: TabBarView(
                   children: [
-                    Center(child: FolderPickingTab(sheepSkin)),
-                    Center(child: SchedulingTab(sheepSkin)),
-                    Center(child: DebugTab(sheepSkin)),
+                    Center(child: FolderPickingTab(this.sheepSkin)),
+                    Center(child: SchedulingTab(this.sheepSkin)),
+                    Center(child: DebugTab(this.sheepSkin)),
                   ],
                 ))));
-  }
-
-  void showSnackBar() {
-    // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    //   content: const Text('Setting wallpaper...'),
-    //   duration: const Duration(seconds: 2),
-    // ));
   }
 }
 
 class FolderPickingTab extends StatefulWidget {
-  const FolderPickingTab(SheepSkin sheepSkin, {Key key}) : super(key: key);
+  final SheepSkin sheepSkin;
+
+  const FolderPickingTab(this.sheepSkin);
 
   @override
   State<FolderPickingTab> createState() {
@@ -302,7 +297,9 @@ class FolderPickingTab extends StatefulWidget {
 }
 
 class SchedulingTab extends StatefulWidget {
-  const SchedulingTab(SheepSkin sheepSkin, {Key key}) : super(key: key);
+  final SheepSkin sheepSkin;
+
+  const SchedulingTab(this.sheepSkin);
 
   @override
   State<SchedulingTab> createState() {
@@ -312,7 +309,9 @@ class SchedulingTab extends StatefulWidget {
 }
 
 class DebugTab extends StatefulWidget {
-  const DebugTab(SheepSkin sheepSkin, {Key key}) : super(key: key);
+  final SheepSkin sheepSkin;
+
+  const DebugTab(this.sheepSkin);
 
   @override
   State<DebugTab> createState() {
@@ -421,16 +420,16 @@ class _SchedulingTabState extends State<SchedulingTab> {
               padding: EdgeInsets.all(8.0),
               child: ElevatedButton(
                   onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: const Text('Setting wallpaper...'),
+                      duration: const Duration(seconds: 2),
+                    ));
                     sheepSkin.changeWallpaper();
                   },
                   child: Text('Change wallpaper now')))),
     ]));
 
     return Column(children: rows);
-  }
-
-  void rebuild() {
-    setState(() => {});
   }
 }
 
@@ -450,20 +449,15 @@ class _DebugTabState extends State<DebugTab> {
           padding: EdgeInsets.all(8.0),
           child: TextButton(
               onPressed: () {
-                sheepSkin.folderPickingWidgetState.rebuild();
-                sheepSkin.schedulingWidgetState.rebuild();
-              },
-              child: Text('refresh'))),
-      Padding(
-          padding: EdgeInsets.all(8.0),
-          child: TextButton(
-              onPressed: () {
                 counter++;
                 String newPath = 'folder' + counter.toString();
                 while (sheepSkin.paths.contains(newPath)) {
                   counter++;
                   newPath = 'folder' + counter.toString();
                 }
+                setState(() {
+                  sheepSkin.addMessage('adding fake folder ' + newPath);
+                });
                 sheepSkin.addPath(newPath);
               },
               child: Text('+path'))),
@@ -471,25 +465,43 @@ class _DebugTabState extends State<DebugTab> {
           padding: EdgeInsets.all(8.0),
           child: TextButton(
               onPressed: () {
+                setState(() {
+                  sheepSkin.addMessage('poking...');
+                });
                 periodicTaskCallback();
               },
               child: Text('poke')))
     ]));
 
-    if(sheepSkin.messageList != null) {
-      for (var message in sheepSkin.messageList) {
-        rows.add(Expanded(
-            child: Center(
-                child: Padding(
-                    padding: EdgeInsets.all(8.0), child: Text(message)))));
+    if (sheepSkin.logEntryList != null) {
+      for (var logEntry in sheepSkin.logEntryList) {
+        rows.add(Align(
+            alignment: Alignment.topLeft,
+            child: Column(children: [
+              RichText(
+                text: TextSpan(
+                  children: <TextSpan>[
+                    TextSpan(
+                        text: logEntry.timestamp,
+                        style:
+                            TextStyle(fontSize: 14.0, color: Colors.blueGrey))
+                  ],
+                ),
+              ),
+              RichText(
+                text: TextSpan(
+                  children: <TextSpan>[
+                    TextSpan(
+                        text: logEntry.message,
+                        style: TextStyle(fontSize: 18.0, color: Colors.black)),
+                  ],
+                ),
+              )
+            ])));
       }
     }
 
     return Column(children: rows);
-  }
-
-  void rebuild() {
-    setState(() => {});
   }
 }
 
@@ -517,7 +529,24 @@ class _FolderPickingTabState extends State<FolderPickingTab> {
     print("build() there are " + sheepSkin.paths.length.toString() + " paths.");
 
     for (final String path in sheepSkin.paths) {
-      rows.add(getLabel(path));
+      //rows.add(getLabel(path, (p) => sheepSkin.removePath(p)));
+      rows.add(Flex(direction: Axis.horizontal, children: [
+        Expanded(
+            child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Container(
+                    decoration: BoxDecoration(color: Colors.grey),
+                    padding: EdgeInsets.all(8.0),
+                    child: Text(path)))),
+        IconButton(
+            icon: const Icon(Icons.remove_circle_outline_rounded),
+            tooltip: 'Remove',
+            onPressed: () {
+              setState(() {
+                sheepSkin.removePath(path);
+              });
+            })
+      ]));
     }
 
     rows.add(Row(children: [
@@ -531,117 +560,11 @@ class _FolderPickingTabState extends State<FolderPickingTab> {
                   child: Text('Add image folder')))),
     ]));
 
-    /*
-    rows.add(Row(children: [
-      Padding(padding: EdgeInsets.all(8.0), child: Text('Every')),
-      Padding(
-          padding: EdgeInsets.all(8.0),
-          child: DropdownButton<String>(
-            value: sheepSkin.timeValue,
-            icon: const Icon(Icons.arrow_drop_down),
-            iconSize: 24,
-            elevation: 16,
-            onChanged: (String newValue) {
-              setState(() {
-                sheepSkin.timeValue = newValue;
-                sheepSkin.onScheduleChanged();
-              });
-            },
-            items:
-              sheepSkin.validTimeValues.map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-          )),
-      Padding(
-          padding: EdgeInsets.all(8.0),
-          child: DropdownButton<String>(
-            value: sheepSkin.timeUnit,
-            icon: const Icon(Icons.arrow_drop_down),
-            iconSize: 24,
-            elevation: 16,
-            onChanged: (String newValue) {
-              setState(() {
-                sheepSkin.timeUnit = newValue;
-                sheepSkin.onScheduleChanged();
-              });
-            },
-            items: sheepSkin.validTimeUnits.map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-          )),
-    ]));
-
-    rows.add(Row(children: [
-      Padding(padding: EdgeInsets.all(8.0), child: Text('Change')),
-      Padding(
-          padding: EdgeInsets.all(8.0),
-          child: DropdownButton<String>(
-            value: sheepSkin.destination,
-            icon: const Icon(Icons.arrow_drop_down),
-            iconSize: 24,
-            elevation: 16,
-            onChanged: (String newValue) {
-              setState(() {
-                sheepSkin.destination = newValue;
-                sheepSkin.onScheduleChanged();
-              });
-            },
-            items:
-            sheepSkin.validDestinations.map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-          )),
-    ]));
-
-    if (sheepSkin.paths.length > 0) {
-      var updateInfo = "last update: " +
-          (sheepSkin.lastUpdateTimestamp == null
-              ? '[never]'
-              : sheepSkin.lastUpdateTimestamp.toString());
-      rows.add(Row(children: [
-        Expanded(
-            child: Center(
-                child: Padding(
-                    padding: EdgeInsets.all(8.0), child: Text(updateInfo)))),
-      ]));
-    }
-    */
-
     return Column(children: rows);
   }
-
-  void rebuild() {
-    setState(() => {});
-  }
 }
 
-Widget getLabel(String thePath) {
-  return Flex(direction: Axis.horizontal, children: [
-    Expanded(
-        child: Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Container(
-                decoration: BoxDecoration(color: Colors.grey),
-                padding: EdgeInsets.all(8.0),
-                child: Text(thePath)))),
-    IconButton(
-        icon: const Icon(Icons.remove_circle_outline_rounded),
-        tooltip: 'Remove',
-        onPressed: () {
-          sheepSkin.removePath(thePath);
-        })
-  ]);
-}
-
+/*
 class PathLabel extends StatefulWidget {
   final String path;
   final _FolderPickingTabState optionsWidgetState;
@@ -691,3 +614,4 @@ class _PathLabelState extends State<PathLabel> {
         ]));
   }
 }
+*/
