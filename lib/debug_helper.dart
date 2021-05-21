@@ -1,13 +1,10 @@
 // @dart=2.9
 
-import 'dart:math';
 import 'dart:ui';
 
-import 'package:android_alarm_manager/android_alarm_manager.dart';
 import 'package:flutter/material.dart';
 
 import 'sheepskin.dart';
-
 
 class DebugTab extends StatefulWidget {
   final SheepSkin sheepSkin;
@@ -16,17 +13,15 @@ class DebugTab extends StatefulWidget {
 
   @override
   State<DebugTab> createState() {
-    return _DebugTabState(sheepSkin);
+    return _DebugTabState();
   }
 }
 
 class _DebugTabState extends State<DebugTab> {
-  final SheepSkin sheepSkin;
-
-  _DebugTabState(this.sheepSkin);
-
   @override
   Widget build(BuildContext context) {
+    print("_DebugTabState.build()");
+
     int counter = 1000; // for generating fake paths
 
     var buttonBar = Container(
@@ -37,42 +32,23 @@ class _DebugTabState extends State<DebugTab> {
               TextButton(
                   onPressed: () {
                     setState(() {
-                      addDebugLine(counter);
+                      addDebugLine(widget.sheepSkin, counter, 1);
                     });
                   },
                   child: Text('+path')),
               TextButton(
                   onPressed: () {
                     setState(() {
-                      addDebugLine(counter);
-                      addDebugLine(counter);
-                      addDebugLine(counter);
-                      addDebugLine(counter);
-                      addDebugLine(counter);
+                      addDebugLine(widget.sheepSkin, counter, 5);
                     });
                   },
                   child: Text('+++path')),
-              TextButton(
-                  onPressed: () async {
-                    setState(() {
-                      sheepSkin.log('poking...');
-                    });
-                    await AndroidAlarmManager.oneShot(
-                      const Duration(seconds: 5),
-                      // Ensure we have a unique alarm ID.
-                      Random().nextInt(pow(2, 31).toInt()),
-                      SheepSkin.thingyCallback,
-                      exact: true,
-                      wakeup: true,
-                    );
-                  },
-                  child: Text('poke'))
             ])));
 
     List<Widget> listViewItems = [];
 
-    if (sheepSkin.logEntryList != null) {
-      for (var logEntry in sheepSkin.logEntryList) {
+    if (widget.sheepSkin.logEntryList != null) {
+      for (var logEntry in widget.sheepSkin.logEntryList) {
         listViewItems.add(Align(
             alignment: Alignment.centerLeft,
             child: Padding(
@@ -145,16 +121,19 @@ class _DebugTabState extends State<DebugTab> {
     );
   }
 
-  void addDebugLine(int counter) {
-    counter++;
-    String newPath = 'folder' + counter.toString();
-    while (sheepSkin.paths.contains(newPath)) {
+  void addDebugLine(SheepSkin sheepSkin, int counter, int amount) {
+    while(amount > 0) {
       counter++;
-      newPath = 'folder' + counter.toString();
+      String newPath = 'folder' + counter.toString();
+      while (sheepSkin.getPaths().contains(newPath)) {
+        counter++;
+        newPath = 'folder' + counter.toString();
+      }
+      setState(() {
+        sheepSkin.addPath(newPath);
+        sheepSkin.log('adding fake folder ' + newPath);
+      });
+      amount -= 1;
     }
-    setState(() {
-      sheepSkin.addPath(newPath);
-      sheepSkin.log('adding fake folder ' + newPath);
-    });
   }
 }
