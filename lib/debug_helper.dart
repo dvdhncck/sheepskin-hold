@@ -1,10 +1,15 @@
 // @dart=2.9
 
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
 import 'sheepskin.dart';
+
+final _random = new Random(DateTime
+    .now()
+    .millisecondsSinceEpoch);
 
 class DebugTab extends StatefulWidget {
   final SheepSkin sheepSkin;
@@ -23,6 +28,7 @@ class _DebugTabState extends State<DebugTab> {
     print("_DebugTabState.build()");
 
     int counter = 1000; // for generating fake paths
+
 
     var buttonBar = Container(
         decoration: makeBorder(Colors.black26, Colors.orangeAccent),
@@ -63,18 +69,18 @@ class _DebugTabState extends State<DebugTab> {
                         children: [
                           Container(
                               child: RichText(
-                            textAlign: TextAlign.start,
-                            text: TextSpan(
-                              children: <TextSpan>[
-                                TextSpan(
-                                    text: logEntry.timestamp,
-                                    style: TextStyle(
-                                        backgroundColor: Colors.deepOrange,
-                                        fontSize: 14.0,
-                                        color: Colors.white))
-                              ],
-                            ),
-                          )),
+                                textAlign: TextAlign.start,
+                                text: TextSpan(
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                        text: logEntry.timestamp,
+                                        style: TextStyle(
+                                            backgroundColor: Colors.deepOrange,
+                                            fontSize: 14.0,
+                                            color: Colors.white))
+                                  ],
+                                ),
+                              )),
                           RichText(
                             textAlign: TextAlign.start,
                             text: TextSpan(
@@ -121,17 +127,33 @@ class _DebugTabState extends State<DebugTab> {
     );
   }
 
+  List<String> words = [
+    'tree',
+    'hamster',
+    'gooseberry',
+    'shed',
+    'pencil',
+    'wolf',
+    'handbag',
+    'bongo',
+    'doorknob',
+    'wooden',
+    'meta'
+  ];
+
   void addDebugLine(SheepSkin sheepSkin, int counter, int amount) {
-    while(amount > 0) {
+    while (amount > 0) {
       counter++;
-      String newPath = 'folder' + counter.toString();
-      while (sheepSkin.getPaths().contains(newPath)) {
-        counter++;
-        newPath = 'folder' + counter.toString();
+      var pathParts = [];
+      var bits = _random.nextInt(10);
+      while (bits > 0) {
+        pathParts.add(words[_random.nextInt(words.length)]);
+        bits--;
       }
+      var path = pathParts.join('/');
       setState(() {
-        sheepSkin.addPath(newPath);
-        sheepSkin.log('adding fake folder ' + newPath);
+        sheepSkin.addPath(path);
+        sheepSkin.log('adding fake folder', path);
       });
       amount -= 1;
     }

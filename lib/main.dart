@@ -1,24 +1,15 @@
 // @dart=2.9
 
-import 'dart:isolate';
-
 import 'package:flutter/material.dart';
 import 'package:sheepskin/sheepskin.dart';
 
 import "folder_picker.dart";
+import 'gui_test.dart';
 import "scheduler_options.dart";
 import "debug_helper.dart";
 
-final ReceivePort port = ReceivePort(); // for talking to the isolate
-const String isolateName = 'sheepskin';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // IsolateNameServer.registerPortWithName(
-  //   port.sendPort,
-  //   isolateName,
-  // );
 
   runApp(OuterLimitsState());
 }
@@ -35,8 +26,6 @@ class _OuterLimitsState extends State<OuterLimitsState> {
 
   SheepSkin sheepSkin;
 
-  var schedulingTab; // this is the only bit of the UI that needs repainting
-
   @override
   void initState() {
     super.initState();
@@ -46,11 +35,9 @@ class _OuterLimitsState extends State<OuterLimitsState> {
 
   // callback when the state has been changed by something other than the UI
   void onStateUpdate() {
-    if(schedulingTab != null) {
-      schedulingTab.setState(() {
-        print('state update');
+    setState(() {
+        //print('state update');
       });
-    }
   }
 
   @override
@@ -63,13 +50,11 @@ class _OuterLimitsState extends State<OuterLimitsState> {
           home: Text('hai'));
     }
 
-    schedulingTab = SchedulingTab(sheepSkin);
-
     return MaterialApp(
         title: 'Wallpaper Fluctuator',
         debugShowCheckedModeBanner: false,
         home: DefaultTabController(
-            length: 3,
+            length: 4,
             child: Scaffold(
                 appBar: AppBar(
                   title: Center(child: Text('Wallpaper Fluctuator')),
@@ -78,14 +63,16 @@ class _OuterLimitsState extends State<OuterLimitsState> {
                       Tab(icon: Icon(Icons.add_photo_alternate_outlined)),
                       Tab(icon: Icon(Icons.access_alarms)),
                       Tab(icon: Icon(Icons.message_outlined)),
+                      Tab(icon: Icon(Icons.wb_sunny)),
                     ],
                   ),
                 ),
                 body: TabBarView(
                   children: [
                     Center(child: FolderPickingTab(sheepSkin)),
-                    Center(child: schedulingTab),
+                    Center(child: SchedulingTab(sheepSkin)),
                     Center(child: DebugTab(sheepSkin)),
+                    Center(child: GuiTestTab(sheepSkin)),
                   ],
                 ))));
   }

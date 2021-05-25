@@ -1,68 +1,55 @@
 // @dart=2.9
 
 import 'dart:io';
-import 'dart:isolate';
-import 'package:flutter/material.dart';
-import 'package:stream_channel/isolate_channel.dart';
-import "dart:math";
-import "dart:async";
 
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:mime/mime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wallpaper_manager/wallpaper_manager.dart';
 
-import 'dart:convert';
-
+import 'model.dart';
 import 'message_log.dart';
 import 'mr_background.dart';
 
-const List<String> VALID_TIME_VALUES = <String>['1', '5', '10', '100'];
-const List<String> VALID_TIME_UNITS = <String>[
-  'seconds',
-  'minutes',
-  'hours',
-  'days',
-  'weeks'
-];
-const List<String> VALID_DESTINATIONS = <String>[
-  'Home screen',
-  'Lock screen',
-  'Both'
-];
+import 'wallpaperer.dart';
 
 class SheepSkin {
+  static final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
 
-  // things the need to be shared with MrBackend
+  static final String unknownTime = '--:--:--';
+
+  // persisted state:
+
   List<String> paths = [];
-  String timeValue;
-  String timeUnit;
-  String destination;
-
-  // remaining state is for the front end only
-  SharedPreferences sharedPreferences;
-
-  String nextChange;
-  String lastChange;
-
-  DateTime lastUpdateTimestamp;
+  TimeValue timeValue;
+  TimeUnit timeUnit;
+  Destination destination;
+  String lastChangeText;
   List<LogMessage> logEntryList = [];
 
-  String imageCount = 'No images selected';
+  // volatile state:
 
-  final _random = new Random(DateTime.now().millisecondsSinceEpoch);
+  SharedPreferences sharedPreferences;
+  MrBackground _mrBackground;
+  Wallpaperer _wallpaperer;
+  Function onUpdateCallback;
+  String nextChangeText;
 
-  final DateFormat formatter = DateFormat('yyyy-MM-dd H:m:s');
-
-  var onUpdateCallback;
+  String imagesLabelText = 'No images yet. Add some folders.';
 
   SheepSkin(Function onUpdateCallback) {
     this.onUpdateCallback = onUpdateCallback;
 
     initialisePreferences((sheepSkin) => _retrieveState());
 
-    connectToMrBackground();
+    _wallpaperer = Wallpaperer(this);
+
+    _mrBackground = MrBackground(this, _wallpaperer, 5);
+    _mrBackground.beginBackgroundCheck();
+    _onScheduleChanged();
+  }
+
+  void requestImmediateChange(Function onCompletion) async {
+    lastChangeText = formatter.format(DateTime.now());
+    _wallpaperer.changeWallpaper(onCompletion);
   }
 
   void initialisePreferences(Function onReady) async {
@@ -74,70 +61,17 @@ class SheepSkin {
     } finally {}
   }
 
-  var _mrBackground;
-  var sendPort; // for sending to MrB
-
-  static IsolateChannel channel;
-
   void notifyUi() {
-    if(onUpdateCallback != null) {
+    if (onUpdateCallback != null) {
       onUpdateCallback();
     }
   }
 
-  void connectToMrBackground() async {
-
-    if (_mrBackground != null) {
-      // the UI thinks that the background is up. verify that somehow
-    } else {
-      // most likely the UI has been restarted after a kill,
-      // (or this is the first time the app has run)
-      // so we assume the background isolate is dead too
-      print('paging MrBackground...');
-
-      ReceivePort rPort = new ReceivePort();
-      channel = new IsolateChannel.connectReceive(rPort);
-      channel.stream.listen((data) {
-        processEvent(data);
-      });
-
-      await Isolate.spawn(MrBackground.beginBackgroundCheck, rPort.sendPort);
-
-      sendStateToMrBackground();
-    }
-  }
-
-  void sendMessage(String message) async {
-    channel.sink.add(message);
-  }
-
-  void processEvent(String eventRaw) {
-    //print(eventRaw);
-    var event =  Map<String, dynamic>.from(jsonDecode(eventRaw));
-    for(String key in event.keys) {
-        switch(key) {
-          case "heartbeat":
-            //print(event[key]);
-            break;
-          case "changing":
-            lastChange=event[key];
-            print(key + ' ' + lastChange);
-            notifyUi();
-            break;
-          case "next_update":
-            nextChange=event[key];
-            print(key + ' ' + nextChange);
-            notifyUi();
-            break;
-        }
-    }
-  }
-
-  void log(String message) {
+  void log(String message, String details) {
     var dateTime = DateTime.now();
     final String formatted = formatter.format(dateTime);
 
-    print(formatted + " : " + message);
+    print(formatted + " : " + message + '\n' + details);
 
     logEntryList.add(LogMessage(formatted, message));
 
@@ -146,17 +80,10 @@ class SheepSkin {
     }
   }
 
-  String getLastChange() {
-    return lastChange == null ? '--:--:--' : lastChange;
-  }
-
-  String getNextChange() {
-    return nextChange == null ? '--:--:--' : nextChange;
-  }
-
   void setPaths(List<String> paths) {
     this.paths = paths;
   }
+
   void addPath(String path) async {
     if (path != null) {
       // avoid duplicates
@@ -164,9 +91,7 @@ class SheepSkin {
         return;
       }
       getPaths().add(path);
-
       sharedPreferences.setStringList('paths', getPaths());
-
       _onPathChanged();
     }
   }
@@ -174,147 +99,72 @@ class SheepSkin {
   void removePath(String path) async {
     if (path != null) {
       getPaths().remove(path);
-
       sharedPreferences.setStringList('paths', getPaths());
-
       _onPathChanged();
     }
   }
 
   void _onPathChanged() async {
-
-    sendStateToMrBackground();
-
-    var count = 0;
-    var unreadable = 0;
-    for (final path in getPaths()) {
-      Directory dir = Directory(path);
-      try {
-        List<FileSystemEntity> entities =
-            await dir.list(recursive: true).toList();
-        // print(entities);
-        for (var entity in entities) {
-          if (entity is File) {
-            print(lookupMimeType(entity.path));
-            //(entity as File).readAsStringSync();
-            count++;
-          }
-        }
-      } catch (e) {
-        print(e);
-        unreadable++;
-      }
-    }
-
-    imageCount =
-        count.toString() + " files in " + getPaths().length.toString() + " folders";
-
-    if (unreadable > 0) {
-      imageCount += "(some bad)";
-    }
-
+    List<File> _candidates = await _wallpaperer.identifyCandidates(getPaths());
+    imagesLabelText = _candidates.length.toString() + " images to choose from";
+    notifyUi();
   }
 
-  String getTimeValue() {
-    return timeValue;
+  TimeValue getTimeValue() {
+    return timeValue == null ? TimeValue.ONE : timeValue;
   }
-  String getTimeUnit() {
-    return timeUnit;
+
+  TimeUnit getTimeUnit() {
+    return timeUnit == null ? TimeUnit.HOURS : timeUnit;
   }
-  String getDestination() {
+
+  Destination getDestination() {
     return destination;
   }
+
   List<String> getPaths() {
     return paths;
   }
 
-  void setTimeValue(String value) async {
+  void setTimeValue(TimeValue value) async {
     timeValue = value;
-    sharedPreferences.setString('timeValue', timeValue);
+    sharedPreferences.setString('timeValue', timeValue.label());
     _onScheduleChanged();
   }
 
-  void setTimeUnit(String value) async {
+  void setTimeUnit(TimeUnit value) async {
     timeUnit = value;
-    sharedPreferences.setString('timeUnit', timeUnit);
+    sharedPreferences.setString('timeUnit', timeUnit.label());
     _onScheduleChanged();
   }
 
-  void setDestination(String value) async {
+  void setDestination(Destination value) async {
     destination = value;
-    sharedPreferences.setString('destination', destination);
+    sharedPreferences.setString('destination', destination.label());
     _onScheduleChanged();
   }
 
-  void setLastUpdateTimestamp(DateTime value) async {
-    lastUpdateTimestamp = value;
-    sharedPreferences.setInt(
-        'lastUpdateTimestamp', lastUpdateTimestamp.millisecondsSinceEpoch);
-    _onScheduleChanged();
+  String getLastChangeAsText() {
+    return lastChangeText == null ? unknownTime : lastChangeText;
+  }
+
+  String getNextChangeAsText() {
+    return nextChangeText == null ? unknownTime : nextChangeText;
+  }
+
+  void notifyWallpaperChangeHasHappened() async {
+    lastChangeText = formatter.format(DateTime.now());
+    sharedPreferences.setString('lastChangeText', lastChangeText);
+    notifyUi();
+  }
+
+  void notifyTimeOfNextWallpaperChange(DateTime value) async {
+    nextChangeText = formatter.format(value);
+    notifyUi();
   }
 
   void _onScheduleChanged() async {
-    sendStateToMrBackground();
-  }
-
-  Future<String> _pickImage() async {
-    if (getPaths() == null || getPaths().length == 0) {
-      return null;
-    }
-
-    List<File> candidates = [];
-    for (final path in getPaths()) {
-      try {
-        Directory dir = Directory(path);
-        List<FileSystemEntity> entities =
-            await dir.list(recursive: true).toList();
-        // print(entities);
-        for (var entity in entities) {
-          if (entity is File) {
-            String mimeType = lookupMimeType(entity.path);
-            if (mimeType.startsWith('image/')) {
-              candidates.add(entity);
-            }
-          }
-        }
-      } catch (e) {
-        print(e);
-      }
-    }
-    if (candidates.isEmpty) {
-      return null;
-    }
-
-    var theChosenOne = candidates[_random.nextInt(candidates.length)];
-    return theChosenOne.path;
-  }
-
-  int _decodeDestination() {
-    switch (destination) {
-      case 'Home screen':
-        return WallpaperManager.HOME_SCREEN;
-      case 'Lock screen':
-        return WallpaperManager.LOCK_SCREEN;
-      default:
-        return WallpaperManager.BOTH_SCREENS;
-    }
-  }
-
-  void changeWallpaper(Function onDone) async {
-    String wallpaper = await _pickImage();
-    setLastUpdateTimestamp(DateTime.now());
-    if (wallpaper == null) {
-      log('Unable to find any images');
-      return;
-    }
-    int location = _decodeDestination();
-    try {
-      log('Setting wallpaper on ' + destination);
-      await WallpaperManager.setWallpaperFromFile(wallpaper, location);
-      onDone();
-    } on PlatformException catch (e) {
-      log('Failed to get wallpaper: ' + e.toString());
-    }
+    _mrBackground.chooseTheTimeForNextUpdate();
   }
 
   void _retrieveState() {
@@ -329,60 +179,35 @@ class SheepSkin {
       setPaths([]);
     }
 
-    if (sharedPreferences.containsKey('lastUpdateTimestamp')) {
-      int millisecondsSinceEpoch =
-          sharedPreferences.getInt('lastUpdateTimestamp');
-      lastUpdateTimestamp =
-          DateTime.fromMillisecondsSinceEpoch(millisecondsSinceEpoch);
-    } else {
-      lastUpdateTimestamp = null; // we've never done an update
-    }
-
     if (sharedPreferences.containsKey('timeValue')) {
-      timeValue = sharedPreferences.getString('timeValue');
+      timeValue =
+          TimeValue.from(sharedPreferences.getString('timeValue'));
     } else {
-      timeValue = '1';
+      timeValue = TimeValue.ONE;
     }
 
     if (sharedPreferences.containsKey('timeUnit')) {
-      timeUnit = sharedPreferences.getString('timeUnit');
+      timeUnit =
+          TimeUnit.from(sharedPreferences.getString('timeUnit'));
     } else {
-      timeUnit = 'days';
+      timeUnit = TimeUnit.DAYS;
     }
 
     if (sharedPreferences.containsKey('destination')) {
-      destination = sharedPreferences.getString('destination');
+      destination =
+          Destination.from(sharedPreferences.getString('destination'));
     } else {
-      destination = 'Home screen';
+      destination = Destination.HOME;
+    }
+
+    if (sharedPreferences.containsKey('lastChangeText')) {
+      lastChangeText = sharedPreferences.getString('lastChangeText');
+    } else {
+      lastChangeText = unknownTime;
     }
 
     logEntryList = LogMessage.retrieveFrom(sharedPreferences);
 
-    onUpdateCallback();
-  }
-
-  // String toJsonArray(List<String> list) {
-  //   return paths.fold('["', (soFar, path) => soFar + path + '","' + ) + ']';
-  // }
-  //
-
-  String toJsonArray(List<String> list) {
-    String json = '[';
-    String delimiter = '';
-    for (var path in paths) {
-      json += delimiter + '"' + path + '"';
-      delimiter = ',';
-    }
-    return json + ']';
-  }
-
-  void sendStateToMrBackground() {
-    var json = '''{
-    "timeValue":"${timeValue}", 
-    "timeUnit":"${timeUnit}", 
-    "destination":"${destination}", 
-    "paths":${toJsonArray(paths)}
-    }''';
-    sendMessage(json);
+    notifyUi();
   }
 }
