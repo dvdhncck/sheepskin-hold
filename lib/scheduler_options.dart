@@ -17,57 +17,89 @@ class SchedulingTab extends StatefulWidget {
 }
 
 class _SchedulingTabState extends State<SchedulingTab> {
-  var nRows = 15;
+  var nRows = 50;
   var rowHeight;
+  var columnWidth;
+
+  static const bendy = Radius.circular(12.0);
 
   Widget build(BuildContext context) {
     rowHeight = MediaQuery.of(context).size.height / nRows;
+    columnWidth = MediaQuery.of(context).size.width ;
 
-    var lastUpdated = Row(children: [
-      Padding(padding: EdgeInsets.all(4.0), child: makeLabel('Last Update')),
+    var lastUpdated =
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(padding: EdgeInsets.all(4), child: makeLabel('Last Update')),
       Padding(
-          padding: EdgeInsets.all(4.0),
+          padding: EdgeInsets.all(4),
           child: makeValue(widget.sheepSkin.getLastChangeAsText()))
     ]);
 
-    var nextUpdate = Row(children: [
-      Padding(padding: EdgeInsets.all(4.0), child: makeLabel('Next Update')),
+    var nextUpdate =
+        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Padding(padding: EdgeInsets.all(4), child: makeLabel('Next Update')),
       Padding(
-          padding: EdgeInsets.all(4.0),
-          child: makeValue(widget.sheepSkin.getNextChangeAsText()))
+          padding: EdgeInsets.all(4),
+          child: makeValue(widget.sheepSkin.getNextChangeAsText())),
     ]);
 
-    var every = Column(children: [
-      Padding(padding: EdgeInsets.all(4.0), child: makeHeading('Every')),
-      Padding(
-          padding: EdgeInsets.all(4.0),
-          child: makeGridPick(
-            TimeValue.iterable(),
-            widget.sheepSkin.getTimeValue(),
-            4,
-            widget.sheepSkin.setTimeValue,
-          )),
-      Padding(
-          padding: EdgeInsets.all(4.0),
-          child: makeGridPick(
-            TimeUnit.iterable(),
-            widget.sheepSkin.getTimeUnit(),
-            4,
-            widget.sheepSkin.setTimeUnit,
-          ))
-    ]);
+    var updateContainer =
+        Padding(padding: EdgeInsets.fromLTRB(20,15,20,15), child: Row(
+            children: [lastUpdated, Spacer(), nextUpdate]));
 
-    var change = Column(children: [
-      Padding(padding: EdgeInsets.all(4.0), child: makeHeading('Change')),
-      Padding(
-          padding: EdgeInsets.all(4.0),
-          child: makeGridPick(
-            Destination.iterable(),
-            widget.sheepSkin.getDestination(),
-            4,
-            widget.sheepSkin.setDestination,
-          ))
-    ]);
+    // ---------
+
+    var buttonWidth = columnWidth / 5;
+
+    var everyContainer = Container(
+        child: Column(children: [
+          Padding(
+              padding: EdgeInsets.all(10.0),
+              child: makeHeading('Change how often?')),
+          Padding(
+              padding: EdgeInsets.all(4.0),
+              child: makeButtockGrid(
+                TimeValue.iterable(),
+                widget.sheepSkin.getTimeValue(),
+                4,
+                buttonWidth,
+                widget.sheepSkin.setTimeValue,
+              )),
+          Padding(
+              padding: EdgeInsets.all(4.0),
+              child: makeButtockGrid(
+                TimeUnit.iterable(),
+                widget.sheepSkin.getTimeUnit(),
+                4,
+                buttonWidth,
+                widget.sheepSkin.setTimeUnit,
+              ))
+        ]),
+        constraints: BoxConstraints(
+            // minHeight: rowHeight * 4,
+            // maxHeight: rowHeight * 6,
+            maxWidth: columnWidth,
+            minWidth: columnWidth));
+
+    var changeContainer = Container(
+        child: Column(children: [
+          Padding(
+              padding: EdgeInsets.all(10.0),
+              child: makeHeading('Change what?')),
+          Padding(
+              padding: EdgeInsets.all(4.0),
+              child: makeButtockGrid(
+                  Destination.iterable(),
+                  widget.sheepSkin.getDestination(),
+                  2,
+                  buttonWidth * 2,
+                  widget.sheepSkin.setDestination)),
+        ]),
+        constraints: BoxConstraints(
+            // minHeight: rowHeight * 2,
+            // maxHeight: rowHeight * 3,
+            maxWidth: columnWidth,
+            minWidth: columnWidth));
 
     var buttonBar = Row(children: [
       Expanded(
@@ -85,19 +117,14 @@ class _SchedulingTabState extends State<SchedulingTab> {
                   child: Text('Change wallpaper now'))))
     ]);
 
-    var upper = Column(
+    var upper = Expanded(child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Container(
-              constraints: BoxConstraints(minHeight: rowHeight),
-              child: lastUpdated),
-          Container(
-              constraints: BoxConstraints(minHeight: rowHeight),
-              child: nextUpdate),
-          Container(child: every),
-          Container(child: change),
-        ]);
+          updateContainer,
+          everyContainer,
+          changeContainer,
+        ]));
 
     return Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -121,42 +148,8 @@ class _SchedulingTabState extends State<SchedulingTab> {
     return Text(text, textScaleFactor: 1.2);
   }
 
-  Widget makeGridPick(Iterable<ListyEnum> options, ListyEnum selected,
-      int columns, Function setter) {
-    var children = options
-        .map((listyEnum) => Container(
-            padding: const EdgeInsets.all(6),
-            child: Center(
-                child: makeButton(listyEnum, listyEnum == selected, setter))))
-        .toList();
-
-    var nRows = 1 + children.length / columns;
-
-    return Container(
-        //constraints: BoxConstraints(maxHeight: buttonHeight * nRows),
-        constraints:
-            BoxConstraints(minHeight: 20, maxHeight: rowHeight * nRows),
-        child: GridView.count(
-            crossAxisCount: columns,
-            //padding: const EdgeInsets.all(5),
-            crossAxisSpacing: 5,
-            mainAxisSpacing: 5,
-            children: children));
-  }
-
-  Widget makeButton(ListyEnum item, bool selected, Function setter) {
-    return Container(
-        constraints: BoxConstraints.expand(height: rowHeight),
-        decoration: makeBorder(selected),
-        child: TextButton(
-          child: Text(item.label(),
-              textAlign: TextAlign.center, style: getTextStyle(selected)),
-          onPressed: () => {
-            setState(() {
-              setter(item);
-            })
-          },
-        ));
+  EdgeInsets makePadding(int c, int maxC, int r, int maxR) {
+    return EdgeInsets.all(6.0);
   }
 
   TextStyle getTextStyle(bool selected) {
@@ -165,23 +158,105 @@ class _SchedulingTabState extends State<SchedulingTab> {
     return selected ? selectedStyle : unselectedStyle;
   }
 
-  BoxDecoration makeBorder(bool selected) {
-    const selectedDecoration = BoxDecoration(
-      color: Colors.blueAccent,
-      borderRadius: BorderRadius.all(Radius.circular(10.0)),
-    );
+  BoxDecoration makeBorder(int c, int maxC, int r, int maxR, bool selected) {
+    var rad;
 
-    const unselectedDecoration = BoxDecoration(
-      color: Colors.white54,
-      borderRadius: BorderRadius.all(Radius.circular(10.0)),
-      border: Border(
-        top: BorderSide(width: 1.0, color: Colors.blueAccent),
-        left: BorderSide(width: 1.0, color: Colors.blueAccent),
-        right: BorderSide(width: 1.0, color: Colors.blueAccent),
-        bottom: BorderSide(width: 1.0, color: Colors.blueAccent),
-      ),
-    );
+    if (c == 0 && r == 0) {
+      rad = BorderRadius.only(topLeft: bendy);
+    }
+    if (c == maxC && r == 0) {
+      rad = BorderRadius.only(topRight: bendy);
+    }
+    if (c == 0 && r == maxR) {
+      rad = BorderRadius.only(bottomLeft: bendy);
+    }
+    if (c == maxC && r == maxR) {
+      rad = BorderRadius.only(bottomRight: bendy);
+    }
+    if (maxR == 0 && c == 0) {
+      rad = BorderRadius.only(topLeft: bendy, bottomLeft: bendy);
+    }
+    if (maxR == 0 && c == maxC) {
+      rad = BorderRadius.only(topRight: bendy, bottomRight: bendy);
+    }
 
-    return selected ? selectedDecoration : unselectedDecoration;
+    return BoxDecoration(
+        color: selected ? Colors.blueAccent : Colors.white, borderRadius: rad);
+  }
+
+  Widget makeButtockGrid(Iterable<ListyEnum> options, ListyEnum selected,
+      int columns, double itemWidth, Function setter) {
+    List<ListyEnum> optionsList = List<ListyEnum>.from(options);
+    int index = 0;
+    int rows = (optionsList.length / columns).ceil();
+    List<Widget> column = [];
+
+    BoxConstraints buttonSize = BoxConstraints(minWidth: itemWidth);
+
+    int maxC = columns - 1;
+    int maxR = rows - 1;
+
+    for (var r = 0; r < rows; r++) {
+      if (r > 0 && r <= rows) {
+        Widget filler = Container(
+            color: Colors.blueAccent,
+            constraints: BoxConstraints(
+                minHeight: 2, maxHeight: 2, maxWidth: itemWidth * columns + 4));
+
+        column.add(filler);
+      }
+
+      List<Widget> thisRow = [];
+      for (var c = 0; c < columns; c++) {
+        ListyEnum item =
+            index < optionsList.length ? optionsList[index++] : null;
+
+        var textButton = TextButton(
+            child: Text(item.label(),
+                textAlign: TextAlign.center,
+                style: getTextStyle(item == selected)),
+            onPressed: () => {
+                  setState(() {
+                    setter(item);
+                  })
+                });
+
+        var buttonBox = Container(
+          child: textButton,
+          //color: Colors.blueAccent,
+          padding: EdgeInsets.all(1.0),
+        );
+
+        thisRow.add(AnimatedContainer(
+            duration: Duration(milliseconds: 333),
+            decoration: makeBorder(c, maxC, r, maxR, item == selected),
+            constraints: buttonSize,
+            padding: EdgeInsets.all(6.0),
+            child: buttonBox));
+
+        if (c < maxC) {
+          Widget filler = Container(
+              constraints:
+                  BoxConstraints(minHeight: 2, minWidth: 2, maxWidth: 2));
+
+          thisRow.add(filler);
+        }
+      }
+      column.add(Flexible(fit: FlexFit.loose, child: Row(children: thisRow)));
+    }
+
+    var inner = Column(mainAxisSize: MainAxisSize.min, children: column);
+
+    var outerDecoration = BoxDecoration(
+        color: Colors.blueAccent,
+        border: Border.all(width: 1.0, color: Colors.blueAccent),
+        borderRadius: BorderRadius.all(bendy));
+
+    return Container(
+        constraints:
+            BoxConstraints(maxWidth: (2 * maxC) + (itemWidth * columns) + 4),
+        padding: EdgeInsets.all(1.0),
+        decoration: outerDecoration,
+        child: inner);
   }
 }
