@@ -13,6 +13,7 @@ import 'wallpaperer.dart';
 
 class SheepSkin {
   static final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+  static final DateFormat shortFormatter = DateFormat('yyyy-MM-dd HH:mm');
 
   static final String unknownTime = '--:--:--';
 
@@ -153,13 +154,13 @@ class SheepSkin {
   }
 
   void notifyWallpaperChangeHasHappened() async {
-    lastChangeText = formatter.format(DateTime.now());
+    lastChangeText = shortFormatter.format(DateTime.now());
     sharedPreferences.setString('lastChangeText', lastChangeText);
     notifyUi();
   }
 
   void notifyTimeOfNextWallpaperChange(DateTime value) async {
-    nextChangeText = formatter.format(value);
+    nextChangeText = shortFormatter.format(value);
     notifyUi();
   }
 

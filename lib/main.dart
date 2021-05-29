@@ -54,7 +54,7 @@ class _OuterLimitsState extends State<OuterLimitsState> {
         title: 'Wallpaper Fluctuator',
         debugShowCheckedModeBanner: false,
         home: DefaultTabController(
-            length: 4,
+            length: 3,
             child: Scaffold(
                 appBar: AppBar(
                   title: Center(child: Text('Wallpaper Fluctuator')),
@@ -63,7 +63,7 @@ class _OuterLimitsState extends State<OuterLimitsState> {
                       Tab(icon: Icon(Icons.add_photo_alternate_outlined)),
                       Tab(icon: Icon(Icons.access_alarms)),
                       Tab(icon: Icon(Icons.message_outlined)),
-                      Tab(icon: Icon(Icons.wb_sunny)),
+                      //Tab(icon: Icon(Icons.wb_sunny)),
                     ],
                   ),
                 ),
@@ -72,7 +72,7 @@ class _OuterLimitsState extends State<OuterLimitsState> {
                     Center(child: FolderPickingTab(sheepSkin)),
                     Center(child: SchedulingTab(sheepSkin)),
                     Center(child: DebugTab(sheepSkin)),
-                    Center(child: GuiTestTab(sheepSkin)),
+                    //Center(child: GuiTestTab(sheepSkin)),
                   ],
                 ))));
   }

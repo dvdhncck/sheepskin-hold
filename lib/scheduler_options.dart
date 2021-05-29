@@ -17,15 +17,13 @@ class SchedulingTab extends StatefulWidget {
 }
 
 class _SchedulingTabState extends State<SchedulingTab> {
-  var nRows = 50;
-  var rowHeight;
   var columnWidth;
 
   static const bendy = Radius.circular(12.0);
 
   Widget build(BuildContext context) {
-    rowHeight = MediaQuery.of(context).size.height / nRows;
     columnWidth = MediaQuery.of(context).size.width ;
+    print("col is $columnWidth");
 
     var lastUpdated =
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -49,7 +47,6 @@ class _SchedulingTabState extends State<SchedulingTab> {
 
     // ---------
 
-    var buttonWidth = columnWidth / 5;
 
     var everyContainer = Container(
         child: Column(children: [
@@ -62,7 +59,6 @@ class _SchedulingTabState extends State<SchedulingTab> {
                 TimeValue.iterable(),
                 widget.sheepSkin.getTimeValue(),
                 4,
-                buttonWidth,
                 widget.sheepSkin.setTimeValue,
               )),
           Padding(
@@ -71,13 +67,10 @@ class _SchedulingTabState extends State<SchedulingTab> {
                 TimeUnit.iterable(),
                 widget.sheepSkin.getTimeUnit(),
                 4,
-                buttonWidth,
                 widget.sheepSkin.setTimeUnit,
               ))
         ]),
         constraints: BoxConstraints(
-            // minHeight: rowHeight * 4,
-            // maxHeight: rowHeight * 6,
             maxWidth: columnWidth,
             minWidth: columnWidth));
 
@@ -92,13 +85,9 @@ class _SchedulingTabState extends State<SchedulingTab> {
                   Destination.iterable(),
                   widget.sheepSkin.getDestination(),
                   2,
-                  buttonWidth * 2,
                   widget.sheepSkin.setDestination)),
         ]),
         constraints: BoxConstraints(
-            // minHeight: rowHeight * 2,
-            // maxHeight: rowHeight * 3,
-            maxWidth: columnWidth,
             minWidth: columnWidth));
 
     var buttonBar = Row(children: [
@@ -185,7 +174,10 @@ class _SchedulingTabState extends State<SchedulingTab> {
   }
 
   Widget makeButtockGrid(Iterable<ListyEnum> options, ListyEnum selected,
-      int columns, double itemWidth, Function setter) {
+      int columns, Function setter) {
+
+    var itemWidth = (columnWidth - 40) / columns;
+
     List<ListyEnum> optionsList = List<ListyEnum>.from(options);
     int index = 0;
     int rows = (optionsList.length / columns).ceil();
