@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'sheepskin.dart';
+import 'gui_parts.dart';
 
 class FolderPickingTab extends StatefulWidget {
   final SheepSkin sheepSkin;
@@ -24,38 +25,48 @@ class _FolderPickingTabState extends State<FolderPickingTab> {
     });
   }
 
-  @override
   Widget build(BuildContext context) {
-    var imageInformationLabel = Row(children: [
-      Expanded(
-          child: Center(
-              child: Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: Text(widget.sheepSkin.imagesLabelText)))),
+    var columnWidth = MediaQuery.of(context).size.width;
+    print("col is $columnWidth");
+
+    var folders =
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(padding: EdgeInsets.all(4), child: makeLabel('Folders Scanned')),
+      Padding(
+          padding: EdgeInsets.all(4),
+          child: makeValue(widget.sheepSkin.getPaths().length.toString()))
     ]);
 
-    var pathRows = <Widget>[];
-    if (widget.sheepSkin.getPaths() != null &&
-        widget.sheepSkin.getPaths().length > 0) {
-      for (final String path in widget.sheepSkin.getPaths()) {
-        pathRows.add(PathLabel(
-            path,
-            () => {
-                  setState(() {
-                    print('repaint from $path');
-                    widget.sheepSkin.removePath(path);
-                  })
-                }));
-      }
-    }
-
-    var upper = Column(children: [
-      imageInformationLabel,
-      ListView(
-        shrinkWrap: true,
-        children: pathRows,
-      )
+    var images = Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+      Padding(padding: EdgeInsets.all(4), child: makeLabel('Images Found')),
+      Padding(
+          padding: EdgeInsets.all(4),
+          child: makeValue(widget.sheepSkin.getImageCount().toString())),
     ]);
+
+    var countContainer = Padding(
+        padding: EdgeInsets.fromLTRB(20, 15, 20, 15),
+        child: Row(children: [folders, Spacer(), images]));
+
+    // ---------
+
+    var pathsContainer = widget.sheepSkin.getPaths().length == 0
+        ? Spacer()
+        : Container(
+            child: Column(children: [
+              Padding(
+                  padding: EdgeInsets.all(10.0),
+                  child: makeHeading('Search where?')),
+              Padding(
+                  padding: EdgeInsets.all(4.0),
+                  child: makeListGrid(
+                      widget.sheepSkin.getPaths(),
+                      columnWidth,
+                      (path) =>
+                          setState(() => {widget.sheepSkin.removePath(path)})))
+            ]),
+            constraints:
+                BoxConstraints(maxWidth: columnWidth, minWidth: columnWidth));
 
     var buttonBar = Row(children: [
       Expanded(
@@ -73,11 +84,21 @@ class _FolderPickingTabState extends State<FolderPickingTab> {
                       print(ex);
                     }
                   },
-                  child: Text('Add image folder')))),
+                  child: Text('Add another folder')))),
     ]);
 
+    var upper = Expanded(
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+          countContainer,
+          pathsContainer,
+        ]));
+
     return Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.max,
         children: [upper, buttonBar]);
   }
 }

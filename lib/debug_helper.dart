@@ -145,7 +145,7 @@ class _DebugTabState extends State<DebugTab> {
     while (amount > 0) {
       counter++;
       var pathParts = [];
-      var bits = _random.nextInt(10);
+      var bits = _random.nextInt(15);
       while (bits > 0) {
         pathParts.add(words[_random.nextInt(words.length)]);
         bits--;

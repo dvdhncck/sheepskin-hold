@@ -20,6 +20,7 @@ class SheepSkin {
   // persisted state:
 
   List<String> paths = [];
+  int imageCount;
   TimeValue timeValue;
   TimeUnit timeUnit;
   Destination destination;
@@ -33,8 +34,6 @@ class SheepSkin {
   Wallpaperer _wallpaperer;
   Function onUpdateCallback;
   String nextChangeText;
-
-  String imagesLabelText = 'No images yet. Add some folders.';
 
   SheepSkin(Function onUpdateCallback) {
     this.onUpdateCallback = onUpdateCallback;
@@ -106,8 +105,8 @@ class SheepSkin {
   }
 
   void _onPathChanged() async {
-    List<File> _candidates = await _wallpaperer.identifyCandidates(getPaths());
-    imagesLabelText = _candidates.length.toString() + " images to choose from";
+    List<File> candidates = await _wallpaperer.identifyCandidates(getPaths());
+    imageCount = candidates.length;
     notifyUi();
   }
 
@@ -125,6 +124,15 @@ class SheepSkin {
 
   List<String> getPaths() {
     return paths;
+  }
+
+  int getImageCount() {
+    return imageCount;
+  }
+
+  void setImageCount(int imageCount) async {
+    this.imageCount = imageCount;
+    notifyUi();
   }
 
   void setTimeValue(TimeValue value) async {
@@ -175,9 +183,15 @@ class SheepSkin {
     }
 
     if (sharedPreferences.containsKey('paths')) {
-      setPaths(sharedPreferences.getStringList('paths'));
+      paths = sharedPreferences.getStringList('paths');
     } else {
-      setPaths([]);
+      paths = [];
+    }
+
+    if (sharedPreferences.containsKey('imageCount')) {
+      imageCount = sharedPreferences.getInt('imageCount');
+    } else {
+      imageCount = 0;
     }
 
     if (sharedPreferences.containsKey('timeValue')) {
@@ -209,6 +223,7 @@ class SheepSkin {
 
     logEntryList = LogMessage.retrieveFrom(sharedPreferences);
 
-    notifyUi();
+    _onPathChanged();
+    _onScheduleChanged();
   }
 }
