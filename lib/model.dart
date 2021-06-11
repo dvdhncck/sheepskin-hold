@@ -1,5 +1,6 @@
 // @dart=2.9
 
+import 'package:sheepskin/sheepskin.dart';
 import 'package:wallpaper_manager/wallpaper_manager.dart';
 
 abstract class ListyEnum {
@@ -70,14 +71,20 @@ class TimeUnit extends ListyEnum {
 
   const TimeUnit(this.duration);
 
-  //static const SECONDS = TimeUnit(Duration(seconds: 1));
+  static const SECONDS = TimeUnit(Duration(seconds: 1));
   static const MINUTES = TimeUnit(Duration(minutes: 1));
   static const HOURS = TimeUnit(Duration(hours: 1));
   static const DAYS = TimeUnit(Duration(days: 1));
   static const WEEKS = TimeUnit(Duration(days: 7));
 
-  static const labelMap = {
-    //TimeUnit.SECONDS: 'seconds',
+  static const _partialLabelMap = {
+    TimeUnit.MINUTES: 'minutes',
+    TimeUnit.HOURS: 'hours',
+    TimeUnit.DAYS: 'days',
+    TimeUnit.WEEKS: 'weeks',
+  };
+  static const _fullLabelMap = {
+    TimeUnit.SECONDS: 'seconds',
     TimeUnit.MINUTES: 'minutes',
     TimeUnit.HOURS: 'hours',
     TimeUnit.DAYS: 'days',
@@ -85,7 +92,7 @@ class TimeUnit extends ListyEnum {
   };
 
   static const durationMap = {
-    //TimeUnit.SECONDS: Duration(seconds: 1),
+    TimeUnit.SECONDS: Duration(seconds: 1),
     TimeUnit.MINUTES: Duration(minutes: 1),
     TimeUnit.HOURS: Duration(hours: 1),
     TimeUnit.DAYS: Duration(days: 1),
@@ -93,15 +100,15 @@ class TimeUnit extends ListyEnum {
   };
 
   static Iterable<TimeUnit> iterable() {
-    return labelMap.keys;
+    return SheepSkin.ALLOW_SECONDS ? _fullLabelMap.keys : _partialLabelMap.keys;
   }
 
   static TimeUnit from(String label) {
-    return labelMap.keys.firstWhere((k) => labelMap[k] == label);
+    return _fullLabelMap.keys.firstWhere((k) => _fullLabelMap[k] == label);
   }
 
   String label() {
-    return labelMap[this];
+    return _fullLabelMap[this];
   }
 }
 

@@ -160,7 +160,7 @@ Widget makeButtockGrid(Iterable<ListyEnum> options, ListyEnum selected,
         child: TextButton(
           child: Text(item.label(),
               textAlign: TextAlign.center,
-              textScaleFactor: 0.9,
+              textScaleFactor: 1.25,
               style: getTextStyle(item == selected)),
           onPressed: () => {setter(item)}),
       );

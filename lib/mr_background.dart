@@ -1,42 +1,56 @@
 // @dart=2.9
 
-import 'package:sheepskin/model.dart';
+import 'dart:async';
+
 import 'package:sheepskin/sheepskin.dart';
 import 'package:sheepskin/wallpaperer.dart';
 
 class MrBackground {
   DateTime timeForNextUpdate;
-  int frequencyInSeconds;
 
   Wallpaperer wallpaperer;
   SheepSkin sheepSkin;
 
-  MrBackground(this.sheepSkin, this.wallpaperer, this.frequencyInSeconds);
+  MrBackground(this.sheepSkin, this.wallpaperer);
+
+  Timer timer;
 
   void beginBackgroundCheck() async {
-    doBackgroundCheck();
+    chooseTheTimeForNextUpdate();
   }
 
   void doBackgroundCheck() {
-    sheepSkin.log('heartbeat','expected every $frequencyInSeconds');
-
+    timer = null;
     if (timeForNextUpdate != null) {
       if (DateTime.now().isAfter(timeForNextUpdate)) {
-        sheepSkin.log('time for a change','');
         wallpaperer.changeWallpaper(sheepSkin.notifyUi);
-        chooseTheTimeForNextUpdate();
-        sheepSkin.notifyUi();
+      } else {
+        sheepSkin.log('too soon', 'timer seems to have fired too early');
       }
+    } else {
+      sheepSkin.log('wonky data', 'timeForNextUpdate is not set');
     }
-
-    Future.delayed(Duration(seconds: frequencyInSeconds), doBackgroundCheck);
+    chooseTheTimeForNextUpdate();
   }
 
   void chooseTheTimeForNextUpdate() {
     int count = sheepSkin.getTimeValue().value;
     Duration duration = sheepSkin.getTimeUnit().duration;
 
-    timeForNextUpdate = DateTime.now().add(duration * count);
+    var pauseForEffect = duration * count;
+
+    timeForNextUpdate = DateTime.now().add(pauseForEffect);
+
+    if (timer != null) {
+      sheepSkin.log('cancelling wakeup call','');
+      timer.cancel();
+    }
+
+    timer = new Timer(
+        pauseForEffect + Duration(milliseconds: 100), doBackgroundCheck);
+
+    sheepSkin.log('scheduled a wakeup call',
+        'timer running until ${sheepSkin.getNextChangeAsText()}');
 
     sheepSkin.notifyTimeOfNextWallpaperChange(timeForNextUpdate);
   }

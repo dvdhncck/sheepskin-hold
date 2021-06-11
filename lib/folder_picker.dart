@@ -27,7 +27,6 @@ class _FolderPickingTabState extends State<FolderPickingTab> {
 
   Widget build(BuildContext context) {
     var columnWidth = MediaQuery.of(context).size.width;
-    print("col is $columnWidth");
 
     var folders =
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

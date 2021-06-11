@@ -22,7 +22,6 @@ class _SchedulingTabState extends State<SchedulingTab> {
 
   Widget build(BuildContext context) {
     columnWidth = MediaQuery.of(context).size.width;
-    print("col is $columnWidth");
 
     var lastUpdated =
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -66,7 +65,7 @@ class _SchedulingTabState extends State<SchedulingTab> {
                   TimeUnit.iterable(),
                   widget.sheepSkin.getTimeUnit(),
                   columnWidth,
-                  4,
+                  TimeUnit.iterable().length,
                   (unit) => widget.sheepSkin.setTimeUnit(unit)))
         ]),
         constraints:

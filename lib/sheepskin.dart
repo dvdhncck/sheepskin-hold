@@ -17,6 +17,8 @@ class SheepSkin {
 
   static final String unknownTime = '--:--:--';
 
+  static const bool ALLOW_SECONDS = false;
+
   // persisted state:
 
   List<String> paths = [];
@@ -42,8 +44,7 @@ class SheepSkin {
 
     _wallpaperer = Wallpaperer(this);
 
-    _mrBackground = MrBackground(this, _wallpaperer, 5);
-    _mrBackground.beginBackgroundCheck();
+    _mrBackground = MrBackground(this, _wallpaperer);
     _onScheduleChanged();
   }
 
@@ -73,13 +74,15 @@ class SheepSkin {
 
     print(formatted + " : " + message + '\n' + details);
 
-    logEntryList.add(LogMessage(formatted, message));
+    logEntryList.add(LogMessage(formatted, message, details));
 
     if (logEntryList.length > 50) {
       logEntryList = logEntryList.sublist(logEntryList.length - 5);
     }
 
-    LogMessage.persistTo(logEntryList, sharedPreferences);
+    if (sharedPreferences != null) {
+      LogMessage.persistTo(logEntryList, sharedPreferences);
+    }
 
     notifyUi();
   }
@@ -199,23 +202,24 @@ class SheepSkin {
     }
 
     if (sharedPreferences.containsKey('timeValue')) {
-      timeValue =
-          TimeValue.from(sharedPreferences.getString('timeValue'));
-    } else {
+      timeValue = TimeValue.from(sharedPreferences.getString('timeValue'));
+    }
+    if (timeValue == null) {
       timeValue = TimeValue.ONE;
     }
 
     if (sharedPreferences.containsKey('timeUnit')) {
-      timeUnit =
-          TimeUnit.from(sharedPreferences.getString('timeUnit'));
-    } else {
+      timeUnit = TimeUnit.from(sharedPreferences.getString('timeUnit'));
+    }
+    if (timeUnit == null) {
       timeUnit = TimeUnit.DAYS;
     }
 
     if (sharedPreferences.containsKey('destination')) {
       destination =
           Destination.from(sharedPreferences.getString('destination'));
-    } else {
+    }
+    if (destination == null) {
       destination = Destination.HOME;
     }
 

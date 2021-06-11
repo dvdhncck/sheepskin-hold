@@ -43,7 +43,7 @@ class Wallpaperer {
               wallpapers[0].path, _sheepSkin.getDestination().location());
         }
         // Signal unbridled Joy
-        _sheepSkin.log('change happened', _sheepSkin.getDestination().label());
+        _sheepSkin.log('wallpaper changed', _sheepSkin.getDestination().label());
         _sheepSkin.notifyWallpaperChangeHasHappened();
         onDone();
       } on PlatformException catch (e) {

@@ -23,7 +23,6 @@ class DebugTab extends StatefulWidget {
 class _DebugTabState extends State<DebugTab> {
   @override
   Widget build(BuildContext context) {
-    print("_DebugTabState.build()");
 
     var buttonBar = Container(
         child: Padding(
@@ -57,7 +56,7 @@ class _DebugTabState extends State<DebugTab> {
     if (widget.sheepSkin.logEntryList != null) {
       for (var logEntry in widget.sheepSkin.logEntryList.reversed) {
         entries.add(Container(
-            height:18,
+            height: 18,
             child: RichText(
                 textAlign: TextAlign.start,
                 text: TextSpan(
@@ -65,22 +64,35 @@ class _DebugTabState extends State<DebugTab> {
                     style:
                         TextStyle(fontSize: 12.0, color: Colors.blueGrey)))));
         entries.add(Container(
-            margin: EdgeInsets.only(bottom:10),
-            height:22,
+            height: 22,
+            margin: EdgeInsets.only(left: 5),
             child: RichText(
                 textAlign: TextAlign.start,
                 text: TextSpan(
                     text: logEntry.message + '\n',
                     style: TextStyle(fontSize: 18.0, color: Colors.black)))));
+        if (logEntry.details != null) {
+          entries.add(Container(
+              margin: EdgeInsets.only(left:10, bottom: 10),
+              height: 15,
+              child: RichText(
+                  textAlign: TextAlign.start,
+                  text: TextSpan(
+                      text: logEntry.details + '\n',
+                      style:
+                          TextStyle(fontSize: 10.0, color: Colors.black38)))));
+        }
       }
     }
 
-    Widget messageView = ListView(children: entries);
+    Widget messageView = Container(
+        margin: EdgeInsets.only(left: 5),
+        child: ListView(children: entries));
 
     return Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [/*buttonBar,*/ Expanded(child:messageView)]);
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [/*buttonBar,*/ Expanded(child: messageView)]);
   }
 
   List<String> words = [
