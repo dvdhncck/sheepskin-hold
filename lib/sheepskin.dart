@@ -75,9 +75,13 @@ class SheepSkin {
 
     logEntryList.add(LogMessage(formatted, message));
 
-    if (logEntryList.length > 5) {
+    if (logEntryList.length > 50) {
       logEntryList = logEntryList.sublist(logEntryList.length - 5);
     }
+
+    LogMessage.persistTo(logEntryList, sharedPreferences);
+
+    notifyUi();
   }
 
   void setPaths(List<String> paths) {
