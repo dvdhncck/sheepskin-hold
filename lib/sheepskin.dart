@@ -36,6 +36,9 @@ class SheepSkin {
   Wallpaperer _wallpaperer;
   Function onUpdateCallback;
   String nextChangeText;
+  bool displayLogMessageViewer = false;
+
+  final bool uiDebug = false;
 
   SheepSkin(Function onUpdateCallback) {
     this.onUpdateCallback = onUpdateCallback;
@@ -131,6 +134,13 @@ class SheepSkin {
 
   List<String> getPaths() {
     return paths;
+  }
+
+
+  void toggleLogMessageViewer() {
+    displayLogMessageViewer = !displayLogMessageViewer;
+    log("Toggled log viewer", "Visible: $displayLogMessageViewer");
+    notifyUi();
   }
 
   int getImageCount() {

@@ -28,7 +28,7 @@ class Wallpaperer {
         await _pickImages(imagesRequired, _sheepSkin.getPaths());
 
     if (wallpapers == null) {
-      _sheepSkin.log('change failed','insufficient images');
+      _sheepSkin.log('Change failed','Insufficient images');
       onDone();
     } else {
       try {
@@ -43,12 +43,12 @@ class Wallpaperer {
               wallpapers[0].path, _sheepSkin.getDestination().location());
         }
         // Signal unbridled Joy
-        _sheepSkin.log('wallpaper changed', _sheepSkin.getDestination().label());
+        _sheepSkin.log('Wallpaper changed', _sheepSkin.getDestination().label());
         _sheepSkin.notifyWallpaperChangeHasHappened();
         onDone();
       } on PlatformException catch (e) {
         // Unexpected fail
-        _sheepSkin.log('change failed', e.toString());
+        _sheepSkin.log('Change failed', e.toString());
         onDone();
       }
     }
@@ -75,7 +75,7 @@ class Wallpaperer {
       }
     }
     if (failed > 0) {
-      print('Failed to read $failed paths');
+      _sheepSkin.log('Scanning error', 'Failed to read $failed paths');
     }
     return candidates;
   }

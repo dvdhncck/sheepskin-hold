@@ -25,10 +25,10 @@ class MrBackground {
       if (DateTime.now().isAfter(timeForNextUpdate)) {
         wallpaperer.changeWallpaper(sheepSkin.notifyUi);
       } else {
-        sheepSkin.log('too soon', 'timer seems to have fired too early');
+        sheepSkin.log('Too soon', 'Timer fired too early');
       }
     } else {
-      sheepSkin.log('wonky data', 'timeForNextUpdate is not set');
+      sheepSkin.log('Wonky data', 'timeForNextUpdate not set');
     }
     chooseTheTimeForNextUpdate();
   }
@@ -42,15 +42,15 @@ class MrBackground {
     timeForNextUpdate = DateTime.now().add(pauseForEffect);
 
     if (timer != null) {
-      sheepSkin.log('cancelling wakeup call','');
+      sheepSkin.log('Cancelling wakeup call','');
       timer.cancel();
     }
 
     timer = new Timer(
         pauseForEffect + Duration(milliseconds: 100), doBackgroundCheck);
 
-    sheepSkin.log('scheduled a wakeup call',
-        'timer running until ${sheepSkin.getNextChangeAsText()}');
+    sheepSkin.log('Scheduled a wakeup call',
+        'Alarm set for ${sheepSkin.getNextChangeAsText()}');
 
     sheepSkin.notifyTimeOfNextWallpaperChange(timeForNextUpdate);
   }

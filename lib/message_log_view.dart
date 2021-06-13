@@ -9,21 +9,20 @@ import 'sheepskin.dart';
 
 final _random = new Random(DateTime.now().millisecondsSinceEpoch);
 
-class DebugTab extends StatefulWidget {
+class MessageLogViewTab extends StatefulWidget {
   final SheepSkin sheepSkin;
 
-  const DebugTab(this.sheepSkin);
+  const MessageLogViewTab(this.sheepSkin);
 
   @override
-  State<DebugTab> createState() {
-    return _DebugTabState();
+  State<MessageLogViewTab> createState() {
+    return _MessageLogViewTabState();
   }
 }
 
-class _DebugTabState extends State<DebugTab> {
+class _MessageLogViewTabState extends State<MessageLogViewTab> {
   @override
   Widget build(BuildContext context) {
-
     var buttonBar = Container(
         child: Padding(
             padding: EdgeInsets.all(8.0),
@@ -56,38 +55,37 @@ class _DebugTabState extends State<DebugTab> {
     if (widget.sheepSkin.logEntryList != null) {
       for (var logEntry in widget.sheepSkin.logEntryList.reversed) {
         entries.add(Container(
-            height: 18,
+            height: 22,
             child: RichText(
                 textAlign: TextAlign.start,
                 text: TextSpan(
                     text: logEntry.timestamp + '\n',
                     style:
-                        TextStyle(fontSize: 12.0, color: Colors.blueGrey)))));
+                        TextStyle(fontSize: 18.0, color: Colors.blueGrey)))));
         entries.add(Container(
-            height: 22,
+            height: 26,
             margin: EdgeInsets.only(left: 5),
             child: RichText(
                 textAlign: TextAlign.start,
                 text: TextSpan(
                     text: logEntry.message + '\n',
-                    style: TextStyle(fontSize: 18.0, color: Colors.black)))));
-        if (logEntry.details != null) {
-          entries.add(Container(
-              margin: EdgeInsets.only(left:10, bottom: 10),
-              height: 15,
-              child: RichText(
-                  textAlign: TextAlign.start,
-                  text: TextSpan(
-                      text: logEntry.details + '\n',
-                      style:
-                          TextStyle(fontSize: 10.0, color: Colors.black38)))));
-        }
+                    style: TextStyle(fontSize: 22.0, color: Colors.black)))));
+        entries.add(Container(
+            margin: EdgeInsets.only(left: 10, bottom: 10),
+            height: 24,
+            child: RichText(
+                textAlign: TextAlign.start,
+                text: TextSpan(
+                    text: (logEntry.details == null || logEntry.details.length == 0
+                            ? 'no details'
+                            : logEntry.details) +
+                        '\n',
+                    style: TextStyle(fontSize: 20.0, color: Colors.black38)))));
       }
     }
 
     Widget messageView = Container(
-        margin: EdgeInsets.only(left: 5),
-        child: ListView(children: entries));
+        margin: EdgeInsets.only(left: 5), child: ListView(children: entries));
 
     return Column(
         mainAxisAlignment: MainAxisAlignment.start,

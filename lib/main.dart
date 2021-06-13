@@ -6,7 +6,7 @@ import 'package:sheepskin/sheepskin.dart';
 import "folder_picker.dart";
 import 'gui_test.dart';
 import "scheduler_options.dart";
-import "debug_helper.dart";
+import "message_log_view.dart";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +23,6 @@ class OuterLimitsState extends StatefulWidget {
 }
 
 class _OuterLimitsState extends State<OuterLimitsState> {
-
   SheepSkin sheepSkin;
 
   @override
@@ -36,8 +35,8 @@ class _OuterLimitsState extends State<OuterLimitsState> {
   // callback when the state has been changed by something other than the UI
   void onStateUpdate() {
     setState(() {
-        //print('state update');
-      });
+      //print('state update');
+    });
   }
 
   @override
@@ -47,33 +46,38 @@ class _OuterLimitsState extends State<OuterLimitsState> {
       return MaterialApp(
           title: 'Wallpaper Fluctuator',
           debugShowCheckedModeBanner: false,
-          home: Text('hai'));
+          home: Text('Loading...'));
+    }
+
+    var tabs = [
+      Tab(icon: Icon(Icons.add_photo_alternate_outlined)),
+      Tab(icon: Icon(Icons.access_alarms)),
+    ];
+    var tabContents = [
+      Center(child: FolderPickingTab(sheepSkin)),
+      Center(child: SchedulingTab(sheepSkin)),
+    ];
+
+    if (sheepSkin.displayLogMessageViewer) {
+      tabs.add(Tab(icon: Icon(Icons.message_outlined)));
+      tabContents.add(Center(child: MessageLogViewTab(sheepSkin)));
+    }
+    if (sheepSkin.uiDebug) {
+      tabs.add(Tab(icon: Icon(Icons.wb_sunny)));
+      tabContents.add(Center(child: GuiTestTab(sheepSkin)));
     }
 
     return MaterialApp(
         title: 'Wallpaper Fluctuator',
         debugShowCheckedModeBanner: false,
         home: DefaultTabController(
-            length: 3,
+            length: tabs.length,
             child: Scaffold(
                 appBar: AppBar(
-                  title: Center(child: Text('Wallpaper Fluctuator')),
-                  bottom: TabBar(
-                    tabs: [
-                      Tab(icon: Icon(Icons.add_photo_alternate_outlined)),
-                      Tab(icon: Icon(Icons.access_alarms)),
-                      Tab(icon: Icon(Icons.message_outlined)),
-                      //Tab(icon: Icon(Icons.wb_sunny)),
-                    ],
+                  title: TabBar(
+                    tabs: tabs,
                   ),
                 ),
-                body: TabBarView(
-                  children: [
-                    Center(child: FolderPickingTab(sheepSkin)),
-                    Center(child: SchedulingTab(sheepSkin)),
-                    Center(child: DebugTab(sheepSkin)),
-                    //Center(child: GuiTestTab(sheepSkin)),
-                  ],
-                ))));
+                body: TabBarView(children: tabContents))));
   }
 }

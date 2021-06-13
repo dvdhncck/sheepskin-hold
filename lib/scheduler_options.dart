@@ -15,6 +15,10 @@ class SchedulingTab extends StatefulWidget {
   State<SchedulingTab> createState() {
     return _SchedulingTabState();
   }
+
+  void toggleLogViewer() {
+    sheepSkin.toggleLogMessageViewer();
+  }
 }
 
 class _SchedulingTabState extends State<SchedulingTab> {
@@ -33,7 +37,11 @@ class _SchedulingTabState extends State<SchedulingTab> {
 
     var nextUpdate =
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      Padding(padding: EdgeInsets.all(4), child: makeLabel('Next Update')),
+      Padding(
+          padding: EdgeInsets.all(4),
+          child: GestureDetector(
+              onLongPress: widget.sheepSkin.toggleLogMessageViewer,
+              child: makeLabel('Next Update'))),
       Padding(
           padding: EdgeInsets.all(4),
           child: makeValue(widget.sheepSkin.getNextChangeAsText())),
@@ -104,19 +112,14 @@ class _SchedulingTabState extends State<SchedulingTab> {
                   child: Text('Change wallpaper now'))))
     ]);
 
-    var upper = Expanded(
-        child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
+    return Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
           updateContainer,
           everyContainer,
           changeContainer,
-        ]));
-
-    return Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.max,
-        children: [upper, buttonBar]);
+          buttonBar
+        ]);
   }
 }
