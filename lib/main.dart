@@ -1,17 +1,47 @@
 // @dart=2.9
 
+import 'dart:isolate';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sheepskin/sheepskin.dart';
 
 import "folder_picker.dart";
 import 'gui_test.dart';
+import 'model.dart';
 import "scheduler_options.dart";
 import "message_log_view.dart";
+
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+
+void printHello() async {
+  final DateTime now = DateTime.now();
+  final int isolateId = Isolate.current.hashCode;
+  print("[$now] Hello, world! isolate=${isolateId} function='$printHello'");
+
+  await SharedPreferences.getInstance().then((prefs) async {
+    await prefs.reload().then((_) {
+      if (prefs.containsKey('timeValue')
+          && prefs.containsKey('timeUnit')) {
+        var timeValue = TimeValue.from(prefs.getString('timeValue'));
+        var timeUnit = TimeUnit.from(prefs.getString('timeUnit'));
+        print('woofz: ${timeValue.label()} ${timeUnit.label()}');
+      }
+    });
+  });
+
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(OuterLimitsState());
+  await AndroidAlarmManager.initialize()
+      .then((value) async {
+
+        await AndroidAlarmManager.periodic(const Duration(seconds: 15), 1234, printHello, exact:true).then((value) => print('alarm status: $value'));
+
+        runApp(OuterLimitsState());
+      });
 }
 
 class OuterLimitsState extends StatefulWidget {

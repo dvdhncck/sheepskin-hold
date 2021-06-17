@@ -1,57 +1,73 @@
 // @dart=2.9
 
 import 'dart:async';
+import 'dart:isolate';
+import 'dart:ui';
 
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:sheepskin/sheepskin.dart';
 import 'package:sheepskin/wallpaperer.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+const String portName = 'quackomatic.sheepskin';
+
+
+void _onAlarmCall() async {
+  // ReceivePort rcPort = new ReceivePort();
+  // IsolateNameServer.registerPortWithName(rcPort.sendPort, portName);
+  // rcPort.listen((state) {
+  //   print('_onAlarmCall: got some state...');
+  // });
+  // //sheepSkin.log('Brrrring!', 'Time to get busy');
+  // //wallpaperer.changeWallpaper(() { bookAlarmCall(sheepSkin.notifyUi); });
+
+
+  print("Alarm fired");
+
+  await SharedPreferences.getInstance().then((sharedPreferences) {
+    var paths = sharedPreferences.getStringList('paths');
+    print('_onAlarmCall: found some paths $paths');
+
+
+  });
+
+
+}
 
 class MrBackground {
-  DateTime timeForNextUpdate;
-
   Wallpaperer wallpaperer;
   SheepSkin sheepSkin;
 
   MrBackground(this.sheepSkin, this.wallpaperer);
 
-  Timer timer;
-
-  void beginBackgroundCheck() async {
-    chooseTheTimeForNextUpdate();
+  void bookAlarmCall(Function onDone) {
+    _cancelExistingAlarmThenSetNewAlarm(onDone);
   }
 
-  void doBackgroundCheck() {
-    timer = null;
-    if (timeForNextUpdate != null) {
-      if (DateTime.now().isAfter(timeForNextUpdate)) {
-        wallpaperer.changeWallpaper(sheepSkin.notifyUi);
-      } else {
-        sheepSkin.log('Too soon', 'Timer fired too early');
-      }
-    } else {
-      sheepSkin.log('Wonky data', 'timeForNextUpdate not set');
-    }
-    chooseTheTimeForNextUpdate();
+  void _cancelExistingAlarmThenSetNewAlarm(Function onDone) async {
+    AndroidAlarmManager.cancel(sheepSkin.getAlarmId())
+        .whenComplete(_scheduleAlarm)
+        .whenComplete(onDone);
   }
 
-  void chooseTheTimeForNextUpdate() {
+  void _scheduleAlarm() async {
     int count = sheepSkin.getTimeValue().value;
     Duration duration = sheepSkin.getTimeUnit().duration;
+    DateTime target = DateTime.now().add(duration * count);
 
-    var pauseForEffect = duration * count;
+    print("Alarm target: $target");
 
-    timeForNextUpdate = DateTime.now().add(pauseForEffect);
-
-    if (timer != null) {
-      sheepSkin.log('Cancelling wakeup call','');
-      timer.cancel();
-    }
-
-    timer = new Timer(
-        pauseForEffect + Duration(milliseconds: 100), doBackgroundCheck);
-
-    sheepSkin.log('Scheduled a wakeup call',
-        'Alarm set for ${sheepSkin.getNextChangeAsText()}');
-
-    sheepSkin.notifyTimeOfNextWallpaperChange(timeForNextUpdate);
+    await AndroidAlarmManager.oneShotAt(
+            target, sheepSkin.getAlarmId(), _onAlarmCall,
+            )
+        .then((_) {
+      sheepSkin.notifyTimeOfNextWallpaperChange(target);
+      sheepSkin.log('Scheduled a wakeup call',
+          'Alarm set for ${sheepSkin.getNextChangeAsText()}');
+      sheepSkin.notifyTimeOfNextWallpaperChange(target);
+    }).catchError((e) {
+      sheepSkin.log('Failed to schedule alarm', '${e.toString()}');
+      sheepSkin.notifyTimeOfNextWallpaperChange(null);
+    });
   }
 }

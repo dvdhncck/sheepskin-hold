@@ -128,6 +128,10 @@ Widget makeListGrid(
       child: inner);
 }
 
+String trim(String input) {
+  return input.length > 3 ? input.substring(0,3) : input;
+}
+
 Widget makeButtockGrid(Iterable<ListyEnum> options, ListyEnum selected,
     double columnWidth, int columns, Function setter) {
   var itemWidth = (columnWidth - 20) / columns;
@@ -158,7 +162,7 @@ Widget makeButtockGrid(Iterable<ListyEnum> options, ListyEnum selected,
 
       var buttonBox = Container(
         child: TextButton(
-          child: Text(item.label(),
+          child: Text(trim(item.label()),
               textAlign: TextAlign.center,
               textScaleFactor: 1.25,
               style: getTextStyle(item == selected)),

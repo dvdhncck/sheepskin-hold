@@ -1,6 +1,7 @@
 // @dart=2.9
 
 import 'dart:io';
+import 'dart:math';
 
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,7 +18,7 @@ class SheepSkin {
 
   static final String unknownTime = '--:--:--';
 
-  static const bool ALLOW_SECONDS = false;
+  static const bool ALLOW_SECONDS = true;
 
   // persisted state:
 
@@ -27,6 +28,7 @@ class SheepSkin {
   TimeUnit timeUnit;
   Destination destination;
   String lastChangeText;
+  String nextChangeText;
   List<LogMessage> logEntryList = [];
 
   // volatile state:
@@ -35,7 +37,6 @@ class SheepSkin {
   MrBackground _mrBackground;
   Wallpaperer _wallpaperer;
   Function onUpdateCallback;
-  String nextChangeText;
   bool displayLogMessageViewer = false;
 
   final bool uiDebug = false;
@@ -43,12 +44,11 @@ class SheepSkin {
   SheepSkin(Function onUpdateCallback) {
     this.onUpdateCallback = onUpdateCallback;
 
-    initialisePreferences((sheepSkin) => _retrieveState());
-
-    _wallpaperer = Wallpaperer(this);
-
-    _mrBackground = MrBackground(this, _wallpaperer);
-    _onScheduleChanged();
+    initialisePreferences((sheepSkin) {
+      _wallpaperer = Wallpaperer(this);
+      _mrBackground = MrBackground(this, _wallpaperer);
+      _retrieveState();
+    });
   }
 
   void requestImmediateChange(Function onCompletion) async {
@@ -57,12 +57,10 @@ class SheepSkin {
   }
 
   void initialisePreferences(Function onReady) async {
-    try {
-      this.sharedPreferences = await SharedPreferences.getInstance();
+    await SharedPreferences.getInstance().then((s) {
+      this.sharedPreferences = s;
       onReady(this);
-    } catch (e) {
-      print(e);
-    } finally {}
+    });
   }
 
   void notifyUi() {
@@ -136,7 +134,6 @@ class SheepSkin {
     return paths;
   }
 
-
   void toggleLogMessageViewer() {
     displayLogMessageViewer = !displayLogMessageViewer;
     log("Toggled log viewer", "Visible: $displayLogMessageViewer");
@@ -149,6 +146,7 @@ class SheepSkin {
 
   void setImageCount(int imageCount) async {
     this.imageCount = imageCount;
+    sharedPreferences.setInt('imageCount', imageCount);
     notifyUi();
   }
 
@@ -185,12 +183,25 @@ class SheepSkin {
   }
 
   void notifyTimeOfNextWallpaperChange(DateTime value) async {
-    nextChangeText = shortFormatter.format(value);
+    if (value == null) {
+      nextChangeText = unknownTime;
+    } else {
+      nextChangeText = shortFormatter.format(value);
+    }
+    sharedPreferences.setString('nextChangeText', nextChangeText);
     notifyUi();
   }
 
   void _onScheduleChanged() async {
-    _mrBackground.chooseTheTimeForNextUpdate();
+    _mrBackground.bookAlarmCall(() => {});
+  }
+
+  int getAlarmId() {
+    if (!sharedPreferences.containsKey('alarmId')) {
+      sharedPreferences.setInt(
+          'alarmId', (1 << 11) + Random.secure().nextInt(1 << 20));
+    }
+    return sharedPreferences.getInt('alarmId');
   }
 
   void _retrieveState() {
@@ -237,6 +248,12 @@ class SheepSkin {
       lastChangeText = sharedPreferences.getString('lastChangeText');
     } else {
       lastChangeText = unknownTime;
+    }
+
+    if (sharedPreferences.containsKey('nextChangeText')) {
+      nextChangeText = sharedPreferences.getString('nextChangeText');
+    } else {
+      nextChangeText = unknownTime;
     }
 
     logEntryList = LogMessage.retrieveFrom(sharedPreferences);

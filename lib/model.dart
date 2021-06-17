@@ -84,7 +84,7 @@ class TimeUnit extends ListyEnum {
     TimeUnit.WEEKS: 'weeks',
   };
   static const _fullLabelMap = {
-    TimeUnit.SECONDS: 'seconds',
+    TimeUnit.SECONDS: 'secs',
     TimeUnit.MINUTES: 'minutes',
     TimeUnit.HOURS: 'hours',
     TimeUnit.DAYS: 'days',
