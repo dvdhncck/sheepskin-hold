@@ -20,7 +20,7 @@ class SheepState {
 
   static const bool SHOW_DEBUG_HELPERS = false;
   static const bool ALLOW_SECONDS = false;
-  static const int PERSISTED_LOG_MESSAGES = 4;
+  static const int PERSISTED_LOG_MESSAGES = 32;
 
   // the persisted state
 
@@ -106,19 +106,19 @@ class SheepState {
   void setTimeValue(TimeValue value) async {
     timeValue = value;
     sharedPreferences.setString('timeValue', timeValue.label());
-    bookAlarmCall(this);
+    MrBackground.bookAlarmCall(this);
   }
 
   void setTimeUnit(TimeUnit value) async {
     timeUnit = value;
     sharedPreferences.setString('timeUnit', timeUnit.label());
-    bookAlarmCall(this);
+    MrBackground.bookAlarmCall(this);
   }
 
   void setDestination(Destination value) async {
     destination = value;
     sharedPreferences.setString('destination', destination.label());
-    bookAlarmCall(this);
+    MrBackground.bookAlarmCall(this);
   }
 
   void _initialiseFrom(SharedPreferences latestSharedPreferences) {
