@@ -6,29 +6,26 @@ import "dart:math";
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:sheepskin/sheepstate.dart';
 import 'package:wallpaper_manager/wallpaper_manager.dart';
 import 'package:mime/mime.dart';
 
 import 'package:sheepskin/model.dart';
-import 'package:sheepskin/sheepskin.dart';
 
 class Wallpaperer {
-  SheepSkin _sheepSkin;
 
-  Wallpaperer(this._sheepSkin);
+  static final _random = new Random(DateTime.now().millisecondsSinceEpoch);
 
-  final _random = new Random(DateTime.now().millisecondsSinceEpoch);
-
-  void changeWallpaper(Function onDone) async {
-    bool isMultiImage = (_sheepSkin.getDestination() == Destination.BOTH_SEPARATE);
+  static void changeWallpaper(SheepState sheepState, Function onDone) async {
+    bool isMultiImage = (sheepState.getDestination() == Destination.BOTH_SEPARATE);
 
     int imagesRequired = isMultiImage ? 2 : 1;
 
     List<File> wallpapers =
-        await _pickImages(imagesRequired, _sheepSkin.getPaths());
+        await _pickImages(sheepState, imagesRequired);
 
     if (wallpapers == null) {
-      _sheepSkin.log('Change failed','Insufficient images');
+      sheepState.log('Change failed','Insufficient images');
       onDone();
     } else {
       try {
@@ -40,24 +37,23 @@ class Wallpaperer {
               wallpapers[1].path, WallpaperManager.LOCK_SCREEN);
         } else {
           await WallpaperManager.setWallpaperFromFile(
-              wallpapers[0].path, _sheepSkin.getDestination().location());
+              wallpapers[0].path, sheepState.getDestination().location());
         }
         // Signal unbridled Joy
-        _sheepSkin.log('Wallpaper changed', _sheepSkin.getDestination().label());
-        _sheepSkin.notifyWallpaperChangeHasHappened();
+        sheepState.setLastChangeTimestamp();
         onDone();
       } on PlatformException catch (e) {
         // Unexpected fail
-        _sheepSkin.log('Change failed', e.toString());
+        sheepState.log('Change failed', e.toString());
         onDone();
       }
     }
   }
 
-  Future<List<File>> identifyCandidates(List<String> paths) async {
+  static Future<List<File>> identifyCandidates(SheepState sheepState) async {
     List<File> candidates = [];
     int failed = 0;
-    for (final path in paths) {
+    for (final path in sheepState.paths) {
       try {
         Directory dir = Directory(path);
         List<FileSystemEntity> entities =
@@ -75,17 +71,17 @@ class Wallpaperer {
       }
     }
     if (failed > 0) {
-      _sheepSkin.log('Scanning error', 'Failed to read $failed paths');
+      sheepState.log('Scanning error', 'Failed to read $failed paths');
     }
     return candidates;
   }
 
-  Future<List<File>> _pickImages(int count, List<String> paths) async {
-    if (paths == null || paths.length == 0) {
+  static Future<List<File>> _pickImages(SheepState sheepState, int count) async {
+    if (sheepState.paths == null || sheepState.paths.length == 0) {
       return null;
     }
 
-    var candidates = await identifyCandidates(paths);
+    var candidates = await identifyCandidates(sheepState);
 
     if (candidates.length < count) {
       return null;
@@ -95,6 +91,4 @@ class Wallpaperer {
 
     return candidates.sublist(0, count);
   }
-
-  
 }

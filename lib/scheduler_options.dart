@@ -65,7 +65,10 @@ class _SchedulingTabState extends State<SchedulingTab> {
                 widget.sheepSkin.getTimeValue(),
                 columnWidth,
                 4,
-                (value) => widget.sheepSkin.setTimeValue(value),
+                (value) async {
+                  widget.sheepSkin.sheepState.setTimeValue(value);
+                  setState(() => {});
+                },
               )),
           Padding(
               padding: EdgeInsets.all(4.0),
@@ -73,8 +76,10 @@ class _SchedulingTabState extends State<SchedulingTab> {
                   TimeUnit.iterable(),
                   widget.sheepSkin.getTimeUnit(),
                   columnWidth,
-                  TimeUnit.iterable().length,
-                  (unit) => widget.sheepSkin.setTimeUnit(unit)))
+                  TimeUnit.iterable().length, (unit) async {
+                widget.sheepSkin.sheepState.setTimeUnit(unit);
+                setState(() => {});
+              }))
         ]),
         constraints:
             BoxConstraints(maxWidth: columnWidth, minWidth: columnWidth));
@@ -90,9 +95,10 @@ class _SchedulingTabState extends State<SchedulingTab> {
                   Destination.iterable(),
                   widget.sheepSkin.getDestination(),
                   columnWidth,
-                  2,
-                  (destination) =>
-                      widget.sheepSkin.setDestination(destination)))
+                  2, (destination) async {
+                widget.sheepSkin.sheepState.setDestination(destination);
+                setState(() => {});
+              }))
         ]),
         constraints: BoxConstraints(minWidth: columnWidth));
 

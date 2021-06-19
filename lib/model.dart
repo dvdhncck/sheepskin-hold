@@ -1,6 +1,7 @@
 // @dart=2.9
 
 import 'package:sheepskin/sheepskin.dart';
+import 'package:sheepskin/sheepstate.dart';
 import 'package:wallpaper_manager/wallpaper_manager.dart';
 
 abstract class ListyEnum {
@@ -100,7 +101,7 @@ class TimeUnit extends ListyEnum {
   };
 
   static Iterable<TimeUnit> iterable() {
-    return SheepSkin.ALLOW_SECONDS ? _fullLabelMap.keys : _partialLabelMap.keys;
+    return SheepState.ALLOW_SECONDS ? _fullLabelMap.keys : _partialLabelMap.keys;
   }
 
   static TimeUnit from(String label) {

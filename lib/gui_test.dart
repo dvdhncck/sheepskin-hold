@@ -44,7 +44,7 @@ class _GuiTestTabState extends State<GuiTestTab> {
             widget.sheepSkin.getTimeValue(),
             4,
             100,
-            widget.sheepSkin.setTimeValue,
+            widget.sheepSkin.sheepState.setTimeValue,
           )),
       Padding(
           padding: EdgeInsets.all(4.0),
@@ -53,7 +53,7 @@ class _GuiTestTabState extends State<GuiTestTab> {
             widget.sheepSkin.getTimeUnit(),
             4,
             100,
-            widget.sheepSkin.setTimeUnit,
+            widget.sheepSkin.sheepState.setTimeUnit,
           ))
     ]);
 
@@ -67,7 +67,7 @@ class _GuiTestTabState extends State<GuiTestTab> {
               widget.sheepSkin.getDestination(),
               2,
               200,
-              widget.sheepSkin.setDestination)),
+              widget.sheepSkin.sheepState.setDestination)),
     ]);
 
     var eC = Container(

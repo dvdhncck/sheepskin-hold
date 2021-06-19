@@ -1,17 +1,31 @@
 // @dart=2.9
 
-import 'dart:async';
-import 'dart:isolate';
-import 'dart:ui';
-
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
-import 'package:sheepskin/sheepskin.dart';
+import 'package:sheepskin/sheepstate.dart';
 import 'package:sheepskin/wallpaperer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'model.dart';
+
 const String portName = 'quackomatic.sheepskin';
 
+void bookAlarmCall(SheepState sheepState) {
+  _cancelExistingAlarmThenSetNewAlarm(sheepState, ()=>{});
+}
 
+void _onAlarmCall() async {
+
+  await SharedPreferences.getInstance().then((sharedPreferences) async {
+    await sharedPreferences.reload().then((_) {
+      var sheepState = SheepState(sharedPreferences);
+      sheepState.log("Alarm fired", "Isn't that nice?");
+      Wallpaperer.changeWallpaper(sheepState, () => bookAlarmCall(sheepState));
+    });
+  });
+
+}
+
+/*
 void _onAlarmCall() async {
   // ReceivePort rcPort = new ReceivePort();
   // IsolateNameServer.registerPortWithName(rcPort.sendPort, portName);
@@ -21,53 +35,41 @@ void _onAlarmCall() async {
   // //sheepSkin.log('Brrrring!', 'Time to get busy');
   // //wallpaperer.changeWallpaper(() { bookAlarmCall(sheepSkin.notifyUi); });
 
-
   print("Alarm fired");
 
   await SharedPreferences.getInstance().then((sharedPreferences) {
     var paths = sharedPreferences.getStringList('paths');
     print('_onAlarmCall: found some paths $paths');
-
-
   });
+}
+*/
 
-
+// TODO: replace onDone with whenComplete()
+void _cancelExistingAlarmThenSetNewAlarm(
+    SheepState sheepState, Function onDone) async {
+  AndroidAlarmManager.cancel(sheepState.alarmId)
+      .whenComplete(() => _scheduleAlarm(sheepState, onDone));
 }
 
-class MrBackground {
-  Wallpaperer wallpaperer;
-  SheepSkin sheepSkin;
+void _scheduleAlarm(SheepState sheepState, Function onDone) async {
+  int count = sheepState.getTimeValue().value;
+  Duration duration = sheepState.getTimeUnit().duration;
+  DateTime target = DateTime.now().add(duration * count);
 
-  MrBackground(this.sheepSkin, this.wallpaperer);
+  print("Alarm target: $target");
 
-  void bookAlarmCall(Function onDone) {
-    _cancelExistingAlarmThenSetNewAlarm(onDone);
-  }
-
-  void _cancelExistingAlarmThenSetNewAlarm(Function onDone) async {
-    AndroidAlarmManager.cancel(sheepSkin.getAlarmId())
-        .whenComplete(_scheduleAlarm)
-        .whenComplete(onDone);
-  }
-
-  void _scheduleAlarm() async {
-    int count = sheepSkin.getTimeValue().value;
-    Duration duration = sheepSkin.getTimeUnit().duration;
-    DateTime target = DateTime.now().add(duration * count);
-
-    print("Alarm target: $target");
-
-    await AndroidAlarmManager.oneShotAt(
-            target, sheepSkin.getAlarmId(), _onAlarmCall,
-            )
-        .then((_) {
-      sheepSkin.notifyTimeOfNextWallpaperChange(target);
-      sheepSkin.log('Scheduled a wakeup call',
-          'Alarm set for ${sheepSkin.getNextChangeAsText()}');
-      sheepSkin.notifyTimeOfNextWallpaperChange(target);
-    }).catchError((e) {
-      sheepSkin.log('Failed to schedule alarm', '${e.toString()}');
-      sheepSkin.notifyTimeOfNextWallpaperChange(null);
-    });
-  }
+  await AndroidAlarmManager.oneShotAt(
+    target,
+    sheepState.alarmId,
+    _onAlarmCall,
+  ).then((_) {
+    sheepState.setNextChangeTimestamp(target);
+    sheepState.log('Scheduled a wakeup call',
+        'Alarm set for ${sheepState.getNextChangeTimestampAsText()}');
+    return true;
+  }).catchError((e) {
+    sheepState.log('Failed to schedule alarm', '${e.toString()}');
+    sheepState.setNextChangeTimestamp(null);
+    return false;
+  });
 }

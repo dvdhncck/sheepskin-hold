@@ -1,10 +1,11 @@
 // @dart=2.9
 
-import 'dart:isolate';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sheepskin/sheepskin.dart';
+import 'package:sheepskin/sheepstate.dart';
 
 import "folder_picker.dart";
 import 'gui_test.dart';
@@ -14,40 +15,43 @@ import "message_log_view.dart";
 
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
-void printHello() async {
+void _sanityCheck() async {
   final DateTime now = DateTime.now();
-  final int isolateId = Isolate.current.hashCode;
-  print("[$now] Hello, world! isolate=${isolateId} function='$printHello'");
+
+  // final int isolateId = Isolate.current.hashCode;
+  // print("[$now] Hello, world! isolate=${isolateId} function='$_sanityCheck'");
 
   await SharedPreferences.getInstance().then((prefs) async {
     await prefs.reload().then((_) {
-      if (prefs.containsKey('timeValue')
-          && prefs.containsKey('timeUnit')) {
+      if (prefs.containsKey('timeValue') && prefs.containsKey('timeUnit')) {
         var timeValue = TimeValue.from(prefs.getString('timeValue'));
         var timeUnit = TimeUnit.from(prefs.getString('timeUnit'));
-        print('woofz: ${timeValue.label()} ${timeUnit.label()}');
+        print('debug: $now ${timeValue.label()} ${timeUnit.label()}');
+        SheepState(prefs).log("Debug Heartbeat", "The world is still here");
       }
     });
   });
-
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await AndroidAlarmManager.initialize()
-      .then((value) async {
+  await AndroidAlarmManager.initialize().then((value) async {
+    // TODO: this is for debug only, not used for real alarm
+    // await AndroidAlarmManager.periodic(
+    //         const Duration(seconds: 15), 1234, _sanityCheck,
+    //         exact: true)
+    //     .then((value) => print('alarm status: $value'));
 
-        await AndroidAlarmManager.periodic(const Duration(seconds: 15), 1234, printHello, exact:true).then((value) => print('alarm status: $value'));
-
-        runApp(OuterLimitsState());
-      });
+    runApp(OuterLimitsState());
+  });
 }
 
 class OuterLimitsState extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
     var outerLimitsState = _OuterLimitsState();
+
     return outerLimitsState;
   }
 }
@@ -60,18 +64,30 @@ class _OuterLimitsState extends State<OuterLimitsState> {
     super.initState();
 
     sheepSkin = SheepSkin(onStateUpdate);
+
+    // periodically reload the shared preferences.
+    //
+    // this is required because they might have been updated by the
+    // background isolate (which updates the last- and next- change
+    // values,and potentially appends a log messages)
+    Timer.periodic(Duration(seconds: 15), (timer) async {
+      await SharedPreferences.getInstance().then((prefs) async {
+        await prefs.reload().then((_) {
+          setState(() => sheepSkin.sheepState = SheepState(prefs));
+        });
+      });
+    });
   }
 
-  // callback when the state has been changed by something other than the UI
+  // callback to be invoked when the state has been
+  // changed by something other than the UI
   void onStateUpdate() {
-    setState(() {
-      //print('state update');
-    });
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    if (sheepSkin == null) {
+    if (sheepSkin == null || sheepSkin.sheepState == null) {
       // we are still loading the sheepSkin state... display a holding thing
       return MaterialApp(
           title: 'Wallpaper Fluctuator',

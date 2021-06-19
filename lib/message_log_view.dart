@@ -4,6 +4,7 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:sheepskin/sheepstate.dart';
 
 import 'sheepskin.dart';
 
@@ -21,9 +22,60 @@ class MessageLogViewTab extends StatefulWidget {
 }
 
 class _MessageLogViewTabState extends State<MessageLogViewTab> {
+  
   @override
   Widget build(BuildContext context) {
-    var buttonBar = Container(
+    if(SheepState.SHOW_DEBUG_HELPERS) {
+      buildDebugButtonBar();
+    }
+    
+    List<Widget> entries = [];
+
+    var sheepState = widget.sheepSkin.sheepState;
+    if (sheepState.logBody != null) {
+      int index  = sheepState.logBody.length;
+      while(--index >= 0) {
+        entries.add(Container(
+            height: 22,
+            child: RichText(
+                textAlign: TextAlign.start,
+                text: TextSpan(
+                    text: sheepState.logTimestamp[index] + '\n',
+                    style:
+                        TextStyle(fontSize: 18.0, color: Colors.blueGrey)))));
+        entries.add(Container(
+            height: 26,
+            margin: EdgeInsets.only(left: 5),
+            child: RichText(
+                textAlign: TextAlign.start,
+                text: TextSpan(
+                    text: sheepState.logHeader[index] + '\n',
+                    style: TextStyle(fontSize: 22.0, color: Colors.black)))));
+        entries.add(Container(
+            margin: EdgeInsets.only(left: 10, bottom: 10),
+            height: 24,
+            child: RichText(
+                textAlign: TextAlign.start,
+                text: TextSpan(
+                    text: sheepState.logBody[index] + '\n',
+                    style: TextStyle(fontSize: 20.0, color: Colors.black38)))));
+      }
+    }
+
+    Widget messageView = Container(
+        margin: EdgeInsets.only(left: 5), child: ListView(children: entries));
+
+    List<Widget> children = SheepState.SHOW_DEBUG_HELPERS  ? [buildDebugButtonBar()] : [];
+    children.add(Expanded(child: messageView));
+
+    return Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children);
+  }
+
+  Container buildDebugButtonBar() {
+    return Container(
         child: Padding(
             padding: EdgeInsets.all(8.0),
             child: Row(children: [
@@ -49,48 +101,6 @@ class _MessageLogViewTabState extends State<MessageLogViewTab> {
                   },
                   child: Text('+++path')),
             ])));
-
-    List<Widget> entries = [];
-
-    if (widget.sheepSkin.logEntryList != null) {
-      for (var logEntry in widget.sheepSkin.logEntryList.reversed) {
-        entries.add(Container(
-            height: 22,
-            child: RichText(
-                textAlign: TextAlign.start,
-                text: TextSpan(
-                    text: logEntry.timestamp + '\n',
-                    style:
-                        TextStyle(fontSize: 18.0, color: Colors.blueGrey)))));
-        entries.add(Container(
-            height: 26,
-            margin: EdgeInsets.only(left: 5),
-            child: RichText(
-                textAlign: TextAlign.start,
-                text: TextSpan(
-                    text: logEntry.message + '\n',
-                    style: TextStyle(fontSize: 22.0, color: Colors.black)))));
-        entries.add(Container(
-            margin: EdgeInsets.only(left: 10, bottom: 10),
-            height: 24,
-            child: RichText(
-                textAlign: TextAlign.start,
-                text: TextSpan(
-                    text: (logEntry.details == null || logEntry.details.length == 0
-                            ? 'no details'
-                            : logEntry.details) +
-                        '\n',
-                    style: TextStyle(fontSize: 20.0, color: Colors.black38)))));
-      }
-    }
-
-    Widget messageView = Container(
-        margin: EdgeInsets.only(left: 5), child: ListView(children: entries));
-
-    return Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [/*buttonBar,*/ Expanded(child: messageView)]);
   }
 
   List<String> words = [
@@ -111,8 +121,8 @@ class _MessageLogViewTabState extends State<MessageLogViewTab> {
     while (amount > 0) {
       String path = makeGibberish('/');
       setState(() {
-        sheepSkin.addPath(path);
-        sheepSkin.log('adding fake folder', path);
+        sheepSkin.sheepState.addPath(path);
+        sheepSkin.sheepState.log('adding fake folder', path);
       });
       amount -= 1;
     }
@@ -122,7 +132,7 @@ class _MessageLogViewTabState extends State<MessageLogViewTab> {
     while (amount > 0) {
       String text = makeGibberish(' ');
       setState(() {
-        sheepSkin.log(text, text);
+        sheepSkin.sheepState.log(text, text);
       });
       amount -= 1;
     }

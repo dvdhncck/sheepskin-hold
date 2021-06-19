@@ -21,7 +21,7 @@ class FolderPickingTab extends StatefulWidget {
 class _FolderPickingTabState extends State<FolderPickingTab> {
   void removePath(String path) {
     setState(() {
-      widget.sheepSkin.removePath(path);
+      widget.sheepSkin.sheepState.removePath(path);
     });
   }
 
@@ -33,7 +33,7 @@ class _FolderPickingTabState extends State<FolderPickingTab> {
       Padding(padding: EdgeInsets.all(4), child: makeLabel('Folders Scanned')),
       Padding(
           padding: EdgeInsets.all(4),
-          child: makeValue(widget.sheepSkin.getPaths().length.toString()))
+          child: makeValue(widget.sheepSkin.sheepState.paths.length.toString()))
     ]);
 
     var images = Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -49,7 +49,7 @@ class _FolderPickingTabState extends State<FolderPickingTab> {
 
     // ---------
 
-    var pathsContainer = widget.sheepSkin.getPaths().length == 0
+    var pathsContainer = widget.sheepSkin.sheepState.paths.length == 0
         ? Spacer()
         : Container(
             child: Column(children: [
@@ -59,10 +59,10 @@ class _FolderPickingTabState extends State<FolderPickingTab> {
               Padding(
                   padding: EdgeInsets.all(4.0),
                   child: makeListGrid(
-                      widget.sheepSkin.getPaths(),
+                      widget.sheepSkin.sheepState.paths,
                       columnWidth,
-                      (path) =>
-                          setState(() => {widget.sheepSkin.removePath(path)})))
+                      (path) => setState(() =>
+                          {widget.sheepSkin.sheepState.removePath(path)})))
             ]),
             constraints:
                 BoxConstraints(maxWidth: columnWidth, minWidth: columnWidth));
@@ -74,9 +74,11 @@ class _FolderPickingTabState extends State<FolderPickingTab> {
               child: ElevatedButton(
                   onPressed: () async {
                     try {
-                      String path =
-                          await FilePicker.platform.getDirectoryPath();
-                      widget.sheepSkin.addPath(path);
+                      await FilePicker.platform.getDirectoryPath().then((path) {
+                        widget.sheepSkin.sheepState.addPath(path);
+                        // TODO: update image counts here
+                        setState(() {});
+                      });
                     } on PlatformException catch (e) {
                       print("Unsupported operation" + e.toString());
                     } catch (ex) {

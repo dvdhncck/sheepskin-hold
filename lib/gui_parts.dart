@@ -1,6 +1,7 @@
 // @dart=2.9
 
 import 'package:flutter/material.dart';
+import 'package:sheepskin/sheepstate.dart';
 
 import 'model.dart';
 
@@ -11,17 +12,17 @@ const uiColour = Color(0xff2196f3);
 Text makeHeading(String text) {
   const labelStyle =
       TextStyle(color: Colors.black54, fontWeight: FontWeight.bold);
-  return Text(text, style: labelStyle, textScaleFactor: 1.4);
+  return Text(text, style: labelStyle, textScaleFactor: 1.3);
 }
 
 Text makeLabel(String text) {
   const labelStyle =
       TextStyle(color: Colors.black54, fontStyle: FontStyle.italic);
-  return Text(text, style: labelStyle, textScaleFactor: 1.2);
+  return Text(text, style: labelStyle, textScaleFactor: 1.0);
 }
 
 Text makeValue(String text) {
-  return Text(text, textScaleFactor: 1.2);
+  return Text(text, textScaleFactor: 1.1);
 }
 
 TextStyle getTextStyle(bool selected) {
@@ -128,8 +129,8 @@ Widget makeListGrid(
       child: inner);
 }
 
-String trim(String input) {
-  return input.length > 3 ? input.substring(0,3) : input;
+String possiblyTrim(String input) {
+  return SheepState.ALLOW_SECONDS && input.length > 3 ? input.substring(0,3) : input;
 }
 
 Widget makeButtockGrid(Iterable<ListyEnum> options, ListyEnum selected,
@@ -162,7 +163,7 @@ Widget makeButtockGrid(Iterable<ListyEnum> options, ListyEnum selected,
 
       var buttonBox = Container(
         child: TextButton(
-          child: Text(trim(item.label()),
+          child: Text(possiblyTrim(item.label()),
               textAlign: TextAlign.center,
               textScaleFactor: 1.25,
               style: getTextStyle(item == selected)),
