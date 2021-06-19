@@ -8,7 +8,6 @@ import 'package:sheepskin/sheepskin.dart';
 import 'package:sheepskin/sheepstate.dart';
 
 import "folder_picker.dart";
-import 'gui_test.dart';
 import 'model.dart';
 import "scheduler_options.dart";
 import "message_log_view.dart";
@@ -107,10 +106,6 @@ class _OuterLimitsState extends State<OuterLimitsState> {
     if (sheepSkin.displayLogMessageViewer) {
       tabs.add(Tab(icon: Icon(Icons.message_outlined)));
       tabContents.add(Center(child: MessageLogViewTab(sheepSkin)));
-    }
-    if (sheepSkin.uiDebug) {
-      tabs.add(Tab(icon: Icon(Icons.wb_sunny)));
-      tabContents.add(Center(child: GuiTestTab(sheepSkin)));
     }
 
     return MaterialApp(

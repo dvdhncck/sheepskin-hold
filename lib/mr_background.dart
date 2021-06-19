@@ -34,6 +34,8 @@ class MrBackground {
 
     print("Alarm target: $target");
 
+    // throws error with message: Attempted to start a duplicate background isolate#
+
     await AndroidAlarmManager.oneShotAt(
         target,
         sheepState.alarmId,

@@ -22,8 +22,6 @@ class SheepSkin {
   Function onUpdateCallback;
   bool displayLogMessageViewer = false;
 
-  final bool uiDebug = false;
-
   SheepSkin(Function onUpdateCallback) {
     this.onUpdateCallback = onUpdateCallback;
 

@@ -1,0 +1,20 @@
+
+.- become nullsafe
+
+.- figure out what happens with different sized images
+
+.- fix folder picking on pixel
+
+-. info screen when there are no folders added
+
+-. ability to browse into folder
+
+-. fancy folder delete action
+
+-. detect if there is an isolate already running with the alarmId -
+ if so, cancel it - although why wouldn't the previous cancel already have killed it?
+
+-. fix the updating of "images found" to be somehow executed in the background, but to signal back when it is done
+(might be a library function, probably has to use ports to signal
+
+.- images effects - tinting, fading, etc
