@@ -29,22 +29,24 @@ dependencies:
   # cupertino_icons: ^1.0.2
 
   # stuff we actually want
+
+
+  #filesystem_picker:
+  #  path: "/workspace/filesystem_picker/package/"
   file_picker: ^3.0.1
-  wallpaper_manager: "^1.0.10"    # not nullsafe
-  shared_preferences: "^2.0.5"
+
+  path_provider_ex: ^1.0.1
+  #path_provider: 2.0.2
+
+  shared_preferences: ^2.0.5
   mime: ^1.0.0
   intl: ^0.17.0
-  android_alarm_manager_plus: "^1.0.1"
-  isolate: ^2.0.3
-
-  #direct_select: ^2.0.0
-  #scroll_snap_list: ^0.8.0
-  #indexed_list_view: ^2.0.0
+  android_alarm_manager_plus: ^1.0.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_launcher_icons: "^0.9.0"
+  flutter_launcher_icons: ^0.9.0
 
 flutter_icons:
   android: "launcher_icon"

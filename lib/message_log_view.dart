@@ -1,5 +1,3 @@
-// @dart=2.9
-
 import 'dart:math';
 import 'dart:ui';
 
@@ -32,34 +30,33 @@ class _MessageLogViewTabState extends State<MessageLogViewTab> {
     List<Widget> entries = [];
 
     var sheepState = widget.sheepSkin.sheepState;
-    if (sheepState.logBody != null) {
-      int index  = sheepState.logBody.length;
-      while(--index >= 0) {
-        entries.add(Container(
-            height: 22,
-            child: RichText(
-                textAlign: TextAlign.start,
-                text: TextSpan(
-                    text: sheepState.logTimestamp[index] + '\n',
-                    style:
-                        TextStyle(fontSize: 18.0, color: Colors.blueGrey)))));
-        entries.add(Container(
-            height: 26,
-            margin: EdgeInsets.only(left: 5),
-            child: RichText(
-                textAlign: TextAlign.start,
-                text: TextSpan(
-                    text: sheepState.logHeader[index] + '\n',
-                    style: TextStyle(fontSize: 22.0, color: Colors.black)))));
-        entries.add(Container(
-            margin: EdgeInsets.only(left: 10, bottom: 10),
-            height: 24,
-            child: RichText(
-                textAlign: TextAlign.start,
-                text: TextSpan(
-                    text: sheepState.logBody[index] + '\n',
-                    style: TextStyle(fontSize: 20.0, color: Colors.black38)))));
-      }
+    int index  = sheepState.logBody.length;
+
+    while(--index >= 0) {
+      entries.add(Container(
+          height: 22,
+          child: RichText(
+              textAlign: TextAlign.start,
+              text: TextSpan(
+                  text: sheepState.logTimestamp[index] + '\n',
+                  style:
+                      TextStyle(fontSize: 18.0, color: Colors.blueGrey)))));
+      entries.add(Container(
+          height: 26,
+          margin: EdgeInsets.only(left: 5),
+          child: RichText(
+              textAlign: TextAlign.start,
+              text: TextSpan(
+                  text: sheepState.logHeader[index] + '\n',
+                  style: TextStyle(fontSize: 22.0, color: Colors.black)))));
+      entries.add(Container(
+          margin: EdgeInsets.only(left: 10, bottom: 10),
+          height: 24,
+          child: RichText(
+              textAlign: TextAlign.start,
+              text: TextSpan(
+                  text: sheepState.logBody[index] + '\n',
+                  style: TextStyle(fontSize: 20.0, color: Colors.black38)))));
     }
 
     Widget messageView = Container(

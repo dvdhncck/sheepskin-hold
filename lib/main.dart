@@ -1,24 +1,18 @@
-// @dart=2.9
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sheepskin/sheepskin.dart';
-import 'package:sheepskin/sheepstate.dart';
 
 import "folder_picker.dart";
-import 'model.dart';
 import "scheduler_options.dart";
 import "message_log_view.dart";
 
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
+/*
 void _sanityCheck() async {
   final DateTime now = DateTime.now();
-
-  // final int isolateId = Isolate.current.hashCode;
-  // print("[$now] Hello, world! isolate=${isolateId} function='$_sanityCheck'");
 
   await SharedPreferences.getInstance().then((prefs) async {
     await prefs.reload().then((_) {
@@ -31,16 +25,21 @@ void _sanityCheck() async {
     });
   });
 }
+*/
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await AndroidAlarmManager.initialize().then((value) async {
-    // TODO: this is for debug only, not used for real alarm
+
+    /*
+    // NOTE: this is for debug only, it is not required for functionality
+    //
     // await AndroidAlarmManager.periodic(
     //         const Duration(seconds: 15), 1234, _sanityCheck,
     //         exact: true)
     //     .then((value) => print('alarm status: $value'));
+    */
 
     runApp(OuterLimitsState());
   });
@@ -49,30 +48,31 @@ void main() async {
 class OuterLimitsState extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
-    var outerLimitsState = _OuterLimitsState();
-
-    return outerLimitsState;
+    return _OuterLimitsState();
   }
 }
 
 class _OuterLimitsState extends State<OuterLimitsState> {
-  SheepSkin sheepSkin;
+
+  late SheepSkin sheepSkin;
+
+  _OuterLimitsState(){
+    this.sheepSkin = SheepSkin(onStateUpdate);
+  }
 
   @override
   void initState() {
     super.initState();
 
-    sheepSkin = SheepSkin(onStateUpdate);
-
     // periodically reload the shared preferences.
     //
-    // this is required because they might have been updated by the
-    // background isolate (which updates the last- and next- change
-    // values,and potentially appends a log messages)
+    // this is required because they can be updated by the background isolate
+    // (which updates the last-change and next-change values, and can
+    // add to the message log)
     Timer.periodic(Duration(seconds: 15), (timer) async {
-      await SharedPreferences.getInstance().then((prefs) async {
-        await prefs.reload().then((_) {
-          setState(() => sheepSkin.sheepState = SheepState(prefs));
+      await SharedPreferences.getInstance().then((sharedPreferences) async {
+        await sharedPreferences.reload().then((_) {
+          setState(() => sheepSkin.sheepState.loadFrom(sharedPreferences));
         });
       });
     });
@@ -86,12 +86,8 @@ class _OuterLimitsState extends State<OuterLimitsState> {
 
   @override
   Widget build(BuildContext context) {
-    if (sheepSkin == null || sheepSkin.sheepState == null) {
-      // we are still loading the sheepSkin state... display a holding thing
-      return MaterialApp(
-          title: 'Wallpaper Fluctuator',
-          debugShowCheckedModeBanner: false,
-          home: Text('Loading...'));
+    if (sheepSkin.sheepState.unready) {
+      return SheepSkin.buildHoldingWidget();
     }
 
     var tabs = [
@@ -121,4 +117,5 @@ class _OuterLimitsState extends State<OuterLimitsState> {
                 ),
                 body: TabBarView(children: tabContents))));
   }
+
 }

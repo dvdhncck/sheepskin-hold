@@ -1,5 +1,3 @@
-// @dart=2.9
-
 import 'dart:async';
 import 'dart:io';
 import "dart:math";
@@ -7,47 +5,63 @@ import "dart:math";
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:sheepskin/sheepstate.dart';
-import 'package:wallpaper_manager/wallpaper_manager.dart';
 import 'package:mime/mime.dart';
 
 import 'package:sheepskin/model.dart';
 
 class Wallpaperer {
+  static const MethodChannel _channel = const MethodChannel('sheepskin');
+
+  static const int HOME_SCREEN = 1;
+  static const int LOCK_SCREEN = 2;
+  static const int BOTH_SCREENS = 3;
 
   static final _random = new Random(DateTime.now().millisecondsSinceEpoch);
 
+  /// Function takes input file's path & location choice
+  static Future<String> setWallpaperFromFile(
+      String filePath, int wallpaperLocation) async {
+    var parameterMap = {
+      'filePath': filePath,
+      'wallpaperLocation': wallpaperLocation
+    };
+
+    final int result =
+        await _channel.invokeMethod('setWallpaperFromFile', parameterMap);
+
+    /// Function returns the set String as result, use for debugging
+    return result > 0 ? "Wallpaper set" : "There was an error.";
+  }
+
   static void changeWallpaper(SheepState sheepState, Function onDone) async {
-    bool isMultiImage = (sheepState.getDestination() == Destination.BOTH_SEPARATE);
+    bool isMultiImage =
+        (sheepState.destination == Destination.BOTH_SEPARATE);
 
     int imagesRequired = isMultiImage ? 2 : 1;
 
-    List<File> wallpapers =
-        await _pickImages(sheepState, imagesRequired);
 
-    if (wallpapers == null) {
-      sheepState.log('Change failed','Insufficient images');
-      onDone();
-    } else {
-      try {
-        WidgetsFlutterBinding.ensureInitialized();
+
+    try {
+      // can throw if there aren't any pictures, or aren't enough pictures
+      List<File> wallpapers = await _pickImages(sheepState, imagesRequired);
+
+      WidgetsFlutterBinding.ensureInitialized();
+        // can potentially throw a platform exception for a bunch of reasons
         if (isMultiImage) {
-          await WallpaperManager.setWallpaperFromFile(
-              wallpapers[0].path, WallpaperManager.HOME_SCREEN);
-          await WallpaperManager.setWallpaperFromFile(
-              wallpapers[1].path, WallpaperManager.LOCK_SCREEN);
+          await setWallpaperFromFile(wallpapers[0].path, HOME_SCREEN);
+          await setWallpaperFromFile(wallpapers[1].path, LOCK_SCREEN);
         } else {
-          await WallpaperManager.setWallpaperFromFile(
-              wallpapers[0].path, sheepState.getDestination().location());
+          await setWallpaperFromFile(
+              wallpapers[0].path, sheepState.destination.location());
         }
         // Signal unbridled Joy
         sheepState.setLastChangeTimestamp();
         onDone();
-      } on PlatformException catch (e) {
-        // Unexpected fail
+      } on Exception catch (e) {
         sheepState.log('Change failed', e.toString());
         onDone();
       }
-    }
+
   }
 
   static Future<List<File>> identifyCandidates(SheepState sheepState) async {
@@ -60,8 +74,8 @@ class Wallpaperer {
             await dir.list(recursive: true).toList();
         for (var entity in entities) {
           if (entity is File) {
-            String mimeType = lookupMimeType(entity.path);
-            if (mimeType.startsWith('image/')) {
+            String? mimeType = lookupMimeType(entity.path);
+            if (mimeType!.startsWith('image/')) {
               candidates.add(entity);
             }
           }
@@ -76,17 +90,17 @@ class Wallpaperer {
     return candidates;
   }
 
-  static Future<List<File>> _pickImages(SheepState sheepState, int count) async {
-    if (sheepState.paths == null || sheepState.paths.length == 0) {
-      return null;
+  static Future<List<File>> _pickImages(
+      SheepState sheepState, int count) async {
+    if (sheepState.paths.length == 0) {
+      throw Exception("No paths have been added");
     }
 
     var candidates = await identifyCandidates(sheepState);
 
     if (candidates.length < count) {
-      return null;
+      throw Exception("Not enough images to choose from");
     }
-
     candidates.shuffle(_random);
 
     return candidates.sublist(0, count);

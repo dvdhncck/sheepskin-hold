@@ -1,5 +1,3 @@
-// @dart=2.9
-
 import 'package:flutter/material.dart';
 
 import 'model.dart';
@@ -25,6 +23,10 @@ class _SchedulingTabState extends State<SchedulingTab> {
   var columnWidth;
 
   Widget build(BuildContext context) {
+    if (widget.sheepSkin.sheepState.unready) {
+      return SheepSkin.buildHoldingWidget();
+    }
+
     columnWidth = MediaQuery.of(context).size.width;
 
     var lastUpdated =
@@ -50,8 +52,6 @@ class _SchedulingTabState extends State<SchedulingTab> {
     var updateContainer = Padding(
         padding: EdgeInsets.fromLTRB(20, 15, 20, 15),
         child: Row(children: [lastUpdated, Spacer(), nextUpdate]));
-
-    // ---------
 
     var everyContainer = Container(
         child: Column(children: [

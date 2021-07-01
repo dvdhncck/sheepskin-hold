@@ -1,5 +1,3 @@
-// @dart=2.9
-
 import 'package:flutter/material.dart';
 import 'package:sheepskin/sheepstate.dart';
 
@@ -130,7 +128,9 @@ Widget makeListGrid(
 }
 
 String possiblyTrim(String input) {
-  return SheepState.ALLOW_SECONDS && input.length > 3 ? input.substring(0,3) : input;
+  return SheepState.ALLOW_SECONDS && input.length > 3
+      ? input.substring(0, 3)
+      : input;
 }
 
 Widget makeButtockGrid(Iterable<ListyEnum> options, ListyEnum selected,
@@ -159,24 +159,25 @@ Widget makeButtockGrid(Iterable<ListyEnum> options, ListyEnum selected,
 
     List<Widget> thisRow = [];
     for (var c = 0; c < columns; c++) {
-      ListyEnum item = index < optionsList.length ? optionsList[index++] : null;
+      if (index < optionsList.length) {
+        ListyEnum item = optionsList[index++];
 
-      var buttonBox = Container(
-        child: TextButton(
-          child: Text(possiblyTrim(item.label()),
-              textAlign: TextAlign.center,
-              textScaleFactor: 1.25,
-              style: getTextStyle(item == selected)),
-          onPressed: () => {setter(item)}),
-      );
+        var buttonBox = Container(
+          child: TextButton(
+              child: Text(possiblyTrim(item.label()),
+                  textAlign: TextAlign.center,
+                  textScaleFactor: 1.25,
+                  style: getTextStyle(item == selected)),
+              onPressed: () => {setter(item)}),
+        );
 
-      thisRow.add(AnimatedContainer(
-          duration: Duration(milliseconds: 333),
-          decoration: makeBorder(c, maxC, r, maxR, item == selected),
-          constraints: buttonSize,
-          padding: EdgeInsets.only(top:4.0, bottom:4.0),
-          child: buttonBox));
-
+        thisRow.add(AnimatedContainer(
+            duration: Duration(milliseconds: 333),
+            decoration: makeBorder(c, maxC, r, maxR, item == selected),
+            constraints: buttonSize,
+            padding: EdgeInsets.only(top: 4.0, bottom: 4.0),
+            child: buttonBox));
+      }
       if (c < maxC) {
         Widget filler = Container(
             constraints:

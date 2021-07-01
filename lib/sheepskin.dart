@@ -1,7 +1,4 @@
-// @dart=2.9
-
-import 'dart:io';
-
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sheepskin/sheepstate.dart';
@@ -15,41 +12,49 @@ class SheepSkin {
 
   static final String unknownTime = '--:--:--';
 
-  SheepState sheepState;
+  final SheepState sheepState = SheepState();
+  late Function onUpdateCallback;
 
-  // volatile state:
-
-  Function onUpdateCallback;
   bool displayLogMessageViewer = false;
 
   SheepSkin(Function onUpdateCallback) {
     this.onUpdateCallback = onUpdateCallback;
 
-    initialisePreferences(onUpdateCallback);
+    SharedPreferences.getInstance().then((sharedPreferences) {
+      sheepState.loadFrom(sharedPreferences);
+      onUpdateCallback();
+    });
+  }
+
+  static MaterialApp buildHoldingWidget() {
+    return MaterialApp(
+        title: 'Wallpaper Fluctuator',
+        debugShowCheckedModeBanner: false,
+        home: Text('Loading...Please be still.'));
   }
 
   TimeValue getTimeValue() {
-    return sheepState.getTimeValue();
+    return sheepState.timeValue;
   }
 
   TimeUnit getTimeUnit() {
-    return sheepState.getTimeUnit();
+    return sheepState.timeUnit;
   }
 
   Destination getDestination() {
-    return sheepState.getDestination();
+    return sheepState.destination;
   }
 
   int getImageCount() {
-    return sheepState.getImageCount();
+    return sheepState.imageCount;
   }
 
   String getLastChangeAsText() {
-    return sheepState.getLastChangeTimestampAsText();
+    return sheepState.lastChangeText;
   }
 
   String getNextChangeAsText() {
-    return sheepState.getNextChangeTimestampAsText();
+    return sheepState.nextChangeText;
   }
 
   void requestImmediateChange(Function onCompletion) async {
@@ -57,32 +62,19 @@ class SheepSkin {
     Wallpaperer.changeWallpaper(sheepState, onCompletion);
   }
 
-  void initialisePreferences(Function onReady) async {
-    await SharedPreferences.getInstance().then((sharedPreferences) {
-      sheepState = SheepState(sharedPreferences);
-      onReady();
-    });
-  }
-
-  void notifyUi() {
-    if (onUpdateCallback != null) {
-      onUpdateCallback();
-    }
-  }
-
   void toggleLogMessageViewer() {
     displayLogMessageViewer = !displayLogMessageViewer;
     sheepState.log("Toggled log viewer", "Visible: $displayLogMessageViewer");
-    notifyUi();
+    onUpdateCallback();
   }
 
   void notifyWallpaperChangeHasHappened() async {
     sheepState.setLastChangeTimestamp();
-    notifyUi();
+    onUpdateCallback();
   }
 
   void notifyTimeOfNextWallpaperChange(DateTime value) async {
     sheepState.setNextChangeTimestamp(value);
-    notifyUi();
+    onUpdateCallback();
   }
 }

@@ -1,24 +1,22 @@
-// @dart=2.9
-
-import 'package:sheepskin/sheepskin.dart';
 import 'package:sheepskin/sheepstate.dart';
-import 'package:wallpaper_manager/wallpaper_manager.dart';
 
-abstract class ListyEnum {
+class ListyEnum {
   const ListyEnum();
 
   static Iterable<ListyEnum> iterable() {
-    return null;
+    return [];
   }
 
   static ListyEnum from(String label) {
-    return null;
+    return ListyEnum();
   }
 
-  String label();
+  String label() {
+    return "";
+  }
 }
 
-class TimeValue extends ListyEnum {
+class TimeValue implements ListyEnum {
   final int value;
 
   const TimeValue(this.value);
@@ -32,7 +30,7 @@ class TimeValue extends ListyEnum {
   static const TWENTY = TimeValue(20);
   static const ONE_HUNDRED = TimeValue(100);
 
-  static const labelMap = {
+  static var labelMap = {
     TimeValue.ONE: '1',
     TimeValue.TWO: '2',
     TimeValue.THREE: '3',
@@ -43,7 +41,7 @@ class TimeValue extends ListyEnum {
     TimeValue.ONE_HUNDRED: '100',
   };
 
-  static const valueMap = {
+  static var valueMap = {
     TimeValue.ONE: 1,
     TimeValue.TWO: 2,
     TimeValue.THREE: 3,
@@ -58,16 +56,16 @@ class TimeValue extends ListyEnum {
     return labelMap.keys;
   }
 
-  static TimeValue from(String label) {
+  static TimeValue from(String? label) {
     return valueMap.keys.firstWhere((k) => labelMap[k] == label);
   }
 
   String label() {
-    return labelMap[this];
+    return labelMap[this]!;
   }
 }
 
-class TimeUnit extends ListyEnum {
+class TimeUnit implements ListyEnum {
   final Duration duration;
 
   const TimeUnit(this.duration);
@@ -101,19 +99,22 @@ class TimeUnit extends ListyEnum {
   };
 
   static Iterable<TimeUnit> iterable() {
-    return SheepState.ALLOW_SECONDS ? _fullLabelMap.keys : _partialLabelMap.keys;
+    return SheepState.ALLOW_SECONDS
+        ? _fullLabelMap.keys
+        : _partialLabelMap.keys;
   }
 
-  static TimeUnit from(String label) {
-    return _fullLabelMap.keys.firstWhere((k) => _fullLabelMap[k] == label);
+  static TimeUnit from(String? label) {
+    return _fullLabelMap.keys.firstWhere((k) => _fullLabelMap[k] == label,
+        orElse: () => TimeUnit.DAYS);
   }
 
   String label() {
-    return _fullLabelMap[this];
+    return _fullLabelMap[this]!;
   }
 }
 
-class Destination extends ListyEnum {
+class Destination implements ListyEnum {
   final String destination;
 
   const Destination(this.destination);
@@ -130,10 +131,11 @@ class Destination extends ListyEnum {
     Destination.BOTH_SEPARATE: 'Both separately',
   };
 
+  // map to the native android codes
   static const locationMap = {
-    Destination.HOME: WallpaperManager.HOME_SCREEN,
-    Destination.LOCK: WallpaperManager.LOCK_SCREEN,
-    Destination.BOTH_TOGETHER: WallpaperManager.BOTH_SCREENS,
+    Destination.HOME: 1,
+    Destination.LOCK: 2,
+    Destination.BOTH_TOGETHER: 3,
   };
 
   static Iterable<Destination> iterable() {
@@ -145,11 +147,10 @@ class Destination extends ListyEnum {
   }
 
   String label() {
-    return labelMap[this];
+    return labelMap[this]!;
   }
 
   int location() {
-    return locationMap[this];
+    return locationMap[this]!;
   }
 }
-
