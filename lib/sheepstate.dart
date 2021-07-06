@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'model.dart';
 import 'mr_background.dart';
+import 'wallpaperer.dart';
 
 class SheepState {
   late SharedPreferences sharedPreferences;
@@ -64,17 +65,23 @@ class SheepState {
     sharedPreferences.setString('lastChangeText', lastChangeText);
   }
 
-  void addPath(String path) async {
+  Future<void> addPath(String path) async {
     if (paths.contains(path)) {
       return;
     }
     paths.add(path); // todo: should assume copy-on-append
     sharedPreferences.setStringList('paths', paths);
+
+    await Wallpaperer.identifyCandidates(this).then(
+            (candidates) => setImageCount(candidates.length));
   }
 
-  void removePath(String path) async {
+  Future<void> removePath(String path) async {
     paths.remove(path); // todo: should assume copy-on-append
     sharedPreferences.setStringList('paths', paths);
+
+    await Wallpaperer.identifyCandidates(this).then(
+            (candidates) => setImageCount(candidates.length));
   }
 
   void setImageCount(int imageCount) async {

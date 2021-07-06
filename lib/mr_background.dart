@@ -17,16 +17,26 @@ class MrBackground {
         Wallpaperer.changeWallpaper(
             sheepState, () => bookAlarmCall(sheepState));
 
-        Future.delayed(Duration(minutes: 1), () {
-          if(sheepState.nextChangeIsInThePast()) {
-            sheepState.log("Alarm update missing.", "Alarm ${sheepState.nextChangeText} is in the past");
-          } else {
-            sheepState.log("Alarm is good.", "Scheduled for future, which is good");
-          }
-        });
+        sheepState.log(
+            "Alarm scheduled.", "Will do a sanity check in 1 minute.");
+
+        monitorAlarmState(sheepState);
       });
     });
+  }
 
+  static void monitorAlarmState(SheepState sheepState) {
+    int retries = 5;
+
+    Future.delayed(Duration(minutes: 1), () {
+      if (sheepState.nextChangeIsInThePast()) {
+        sheepState.log("Alarm update missing.",
+            "Alarm ${sheepState.nextChangeText} is in the past");
+      } else {
+        sheepState.log(
+            "Alarm is good.", "Scheduled for future, which is good");
+      }
+    });
   }
 
   static void _scheduleAlarm(SheepState sheepState) async {
@@ -36,20 +46,25 @@ class MrBackground {
 
     print("Alarm target: $target");
 
-    // throws error with message: Attempted to start a duplicate background isolate#
+    // has been observed to throw error with message: 'Attempted to start a duplicate background isolate'
 
     await AndroidAlarmManager.oneShotAt(
-        target, sheepState.alarmId, _onAlarmCall,
-        alarmClock: true,
-        exact: true,
-        wakeup: true,
-        allowWhileIdle: true,
-        rescheduleOnReboot: true)
-        .then((_) {
-      sheepState.setNextChangeTimestamp(target);
-      sheepState.log('Scheduled a wakeup call',
-          'Alarm set for ${sheepState.nextChangeText}');
-      return true;
+            target, sheepState.alarmId, _onAlarmCall,
+            alarmClock: true,
+            exact: true,
+            wakeup: true,
+            allowWhileIdle: true,
+            rescheduleOnReboot: true)
+        .then((wasScheduledOk) {
+      if (wasScheduledOk) {
+        sheepState.setNextChangeTimestamp(target);
+        sheepState.log('Scheduled a wakeup call',
+            'Alarm set for ${sheepState.nextChangeText}');
+      } else {
+        sheepState.log(
+            'Failed to schedule a wakeup call', 'Because of reasons.');
+      }
+      return wasScheduledOk;
     }).catchError((e) {
       sheepState.log('Failed to schedule alarm', '${e.toString()}');
       sheepState.clearNextChangeTimestamp();

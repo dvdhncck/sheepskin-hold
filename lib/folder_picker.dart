@@ -31,13 +31,10 @@ class _FolderPickingTabState extends State<FolderPickingTab> {
   }
 
   Widget build(BuildContext context) {
-    var columnWidth = MediaQuery
-        .of(context)
-        .size
-        .width;
+    var columnWidth = MediaQuery.of(context).size.width;
 
     var folders =
-    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Padding(padding: EdgeInsets.all(4), child: makeLabel('Folders Scanned')),
       Padding(
           padding: EdgeInsets.all(4),
@@ -60,21 +57,20 @@ class _FolderPickingTabState extends State<FolderPickingTab> {
     var pathsContainer = widget.sheepSkin.sheepState.paths.length == 0
         ? Spacer()
         : Container(
-        child: Column(children: [
-          Padding(
-              padding: EdgeInsets.all(10.0),
-              child: makeHeading('Search where?')),
-          Padding(
-              padding: EdgeInsets.all(4.0),
-              child: makeListGrid(
-                  widget.sheepSkin.sheepState.paths,
-                  columnWidth,
-                      (path) =>
-                      setState(() =>
-                      {widget.sheepSkin.sheepState.removePath(path)})))
-        ]),
-        constraints:
-        BoxConstraints(maxWidth: columnWidth, minWidth: columnWidth));
+            child: Column(children: [
+              Padding(
+                  padding: EdgeInsets.all(10.0),
+                  child: makeHeading('Search where?')),
+              Padding(
+                  padding: EdgeInsets.all(4.0),
+                  child: makeListGrid(
+                      widget.sheepSkin.sheepState.paths,
+                      columnWidth,
+                      (path) => setState(() =>
+                          {widget.sheepSkin.sheepState.removePath(path)})))
+            ]),
+            constraints:
+                BoxConstraints(maxWidth: columnWidth, minWidth: columnWidth));
 
     var buttonBar = Row(children: [
       Expanded(
@@ -88,28 +84,33 @@ class _FolderPickingTabState extends State<FolderPickingTab> {
                       // await FilePicker.platform.getDirectoryPath().then((path) {
 
                       //List<StorageInfo> storageInfo = await PathProviderEx.getStorageInfo();
-                      //var root = storageInfo[0].rootDir; //storageInfo[1] for SD card, geting the root directory
+                      //var root = storageInfo[0].rootDir; //storageInfo[1] for SD card, getting the root directory
 
                       //String? root = await PathProviderPlatform.instance.getExternalStoragePath();
-                     // Directory? root = await getTemporaryDirectory();
+                      // Directory? root = await getTemporaryDirectory();
                       Directory? root = Directory('/storage');
 
                       //var list = await getExternalStorageDirectories();
 
-                      var onSuccess = (path) {
+                      var onSuccess = (path) async {
                         // TODO: update image counts here
-                        setState(() =>
-                            widget.sheepSkin.sheepState.addPath(path));
+                        var sheepState = widget.sheepSkin.sheepState;
+                        await sheepState
+                            .addPath(path)
+                            .then((_) {
+                              setState(() => {});
+                              print("image count is updated");
+                        });
                       };
 
                       var onFailure = (error) {
-                        setState(() =>
-                            widget.sheepSkin.sheepState
-                                .log("Add path failed", error.toString()));
+                        setState(() => widget.sheepSkin.sheepState
+                            .log("Add path failed", error.toString()));
                       };
 
-                      await FilePicker.platform.getDirectoryPath().
-                      then(onSuccess, onError: onFailure);
+                      await FilePicker.platform
+                          .getDirectoryPath()
+                          .then(onSuccess, onError: onFailure);
 
                       // await FilesystemPicker.open(
                       //   title: 'Save to folder',
@@ -134,9 +135,9 @@ class _FolderPickingTabState extends State<FolderPickingTab> {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              countContainer,
-              pathsContainer,
-            ]));
+          countContainer,
+          pathsContainer,
+        ]));
 
     return Column(
         crossAxisAlignment: CrossAxisAlignment.center,
