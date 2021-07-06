@@ -81,6 +81,10 @@ class Wallpaperer {
           }
         }
       } catch (e) {
+        /*
+        FileSystemException: Directory listing failed, path = '/storage/emulated/0/Pictures/backgrounds/' (OS Error: Permission denied,
+         */
+
         failed++;
       }
     }
