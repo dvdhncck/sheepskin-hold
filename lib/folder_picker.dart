@@ -88,14 +88,12 @@ class _FolderPickingTabState extends State<FolderPickingTab> {
 
                       //String? root = await PathProviderPlatform.instance.getExternalStoragePath();
                       // Directory? root = await getTemporaryDirectory();
-                      Directory? root = Directory('/storage');
+                      // Directory? root = Directory('/storage');
 
                       //var list = await getExternalStorageDirectories();
 
                       var onSuccess = (path) async {
-                        // TODO: update image counts here
-                        var sheepState = widget.sheepSkin.sheepState;
-                        await sheepState
+                        await widget.sheepSkin.sheepState
                             .addPath(path)
                             .then((_) {
                               setState(() => {});

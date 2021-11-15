@@ -20,24 +20,29 @@ class MrBackground {
         sheepState.log(
             "Alarm scheduled.", "Will do a sanity check in 1 minute.");
 
-        monitorAlarmState(sheepState);
+        monitorAlarmState(sheepState, 5);
       });
     });
   }
 
-  static void monitorAlarmState(SheepState sheepState) {
-    int retries = 5;
+  static void monitorAlarmState(SheepState sheepState, int retries) {
+    if (retries == 0) {
+      sheepState.log(
+          "Alarm checking abandoned.", "Too many retries.");
+    }
 
     Future.delayed(Duration(minutes: 1), () {
       if (sheepState.nextChangeIsInThePast()) {
-        sheepState.log("Alarm update missing.",
+        sheepState.log("Alarm update missing ($retries).",
             "Alarm ${sheepState.nextChangeText} is in the past");
+        monitorAlarmState(sheepState, retries - 1);
       } else {
         sheepState.log(
             "Alarm is good.", "Scheduled for future, which is good");
       }
     });
   }
+
 
   static void _scheduleAlarm(SheepState sheepState) async {
     int count = sheepState.timeValue.value;
