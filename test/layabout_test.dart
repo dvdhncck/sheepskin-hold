@@ -11,8 +11,8 @@ void main() {
   });
 
   test('Layout of 2 identical rectangles results in a single bin', () {
-    var actual = new Layabout(5, 200, 300)
-        .getBins(1, [Tile.of(10, 3), Tile.of(10, 3)]);
+    var actual =
+        new Layabout(5, 200, 300).getBins(1, [Tile.of(10, 3), Tile.of(10, 3)]);
 
     expect(actual.keys.length, equals(1));
     expect(actual.values.first.length, equals(2));
@@ -88,28 +88,40 @@ void main() {
 
     print(actual);
 
-    expect(actual.length, equals(4)); // grid of 2x2
+    expect(actual.length, equals(2)); // grid of 2x2
   });
 
-  test(
-      'Portrait orientation arrangement', () {
-    List<Tile> stack = [
-      Tile.of(75, 151),
-      Tile.of(74, 150),
-      Tile.of(76, 150)
-    ];
+  test('Landscape into Portrait', () {
+    List<Tile> stack = [Tile.of(75, 151), Tile.of(74, 150), Tile.of(76, 150)];
 
-      Tuple2<int, int> portrait = new Layabout(4, 80, 30).getArrangement(stack);
+    Tuple2<int, int> portrait = new Layabout(4, 80, 30).getArrangement(stack);
 
-      print("portrait=$portrait");
+    print("Landscape into Portrait: $portrait");
+  });
 
-    // for(int density=2; density < 5; density++) {
-    //   Tuple2<int, int> portrait = new Layabout(density, 30, 60).getArrangement(stack);
-    //   print("$density: portrait=$portrait");
-    //
-    //   Tuple2<int, int> landscape = new Layabout(density, 60, 30).getArrangement(
-    //       stack);
-    //   print("$density: landscape=$landscape");
-    // }
+  test('Landscape into Landscape', () {
+    List<Tile> stack = [Tile.of(640,480), Tile.of(640,480), Tile.of(640,480)];
+
+    Tuple2<int, int> portrait = new Layabout(4, 80, 30).getArrangement(stack);
+
+    print("Landscape into Landscape: $portrait");
+  });
+
+  test('Portrait into Landscape', () {
+    List<Tile> stack = [Tile.of(108,192), Tile.of(108,192), Tile.of(108,192)];
+
+    Tuple2<int, int> portrait = new Layabout(4, 1400, 900).getArrangement(stack);
+
+    print("Portrait into Landscape: $portrait");
+  });
+
+  test('Portrait into Portrait', () {
+    List<Tile> stack = [Tile.of(108,192), Tile.of(108,192), Tile.of(108,192)];
+
+    Tuple2<int, int> portrait = new Layabout(4, 900, 1600).getArrangement(stack);
+
+    // why does this pick 4x4 ?
+
+    print("Portrait into Portrait: $portrait");
   });
 }

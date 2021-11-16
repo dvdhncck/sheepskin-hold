@@ -6,18 +6,26 @@ import 'package:mime/mime.dart';
 import 'layabout.dart';
 
 class Tyler {
-  static Future<List<Tile>> scanDirectory(String path) async {
+  Map<String, Tile> tileCache = new Map();
+
+  Future<List<Tile>> scanDirectory(String path) async {
     List<Tile> candidates = [];
+
     try {
       Directory dir = Directory(path);
       List<FileSystemEntity> entities =
           await dir.list(recursive: true).toList();
       for (var entity in entities) {
         if (entity is File) {
-          String? mimeType = lookupMimeType(entity.path);
-          if (mimeType!.startsWith('image/')) {
-            Tile tile = await _scanImage(entity);
-            candidates.add(tile);
+          if(tileCache.containsKey(entity.path)) {
+            candidates.add(tileCache[entity.path] ?? Tile.NotTile);
+          } else {
+            String? mimeType = lookupMimeType(entity.path);
+            if (mimeType!.startsWith('image/')) {
+              Tile tile = await _scanImage(entity);
+              tileCache[entity.path] = tile;
+              candidates.add(tile);
+            }
           }
         }
       }
@@ -31,16 +39,16 @@ class Tyler {
     return candidates;
   }
 
-  static Future<Tile> _scanImage(File entity) async {
-    // var image = Image.file(entity);
+  Future<Tile> _scanImage(File entity) async {
     Image? image = decodeImage(entity.readAsBytesSync());
     return new Tile(
         entity.path, (image?.width ?? 0).floor(), (image?.height ?? 0).floor());
   }
 
-  static void render(int tileDensity, int targetWidth, int targetHeight, List<Tile> tiles, File destination) {
+  void render(int tileDensity, int targetWidth, int targetHeight, File destination) {
     var layabout = new Layabout(tileDensity, targetWidth, targetHeight);
 
+    var tiles = tileCache.values.toList(growable:false);
     var bins = layabout.getBins(2, tiles);
     List<PlacedTile> layout = layabout.getLayout(bins);
 
@@ -59,7 +67,8 @@ class Tyler {
           int destX = placedTile.x;
           double srcX = .0;
           for (var x = 0; x < placedTile.scaledW; x++) {
-            image.setPixel(destX, destY, tileImage.getPixel(srcX.floor(), srcY.floor()));
+            image.setPixel(
+                destX, destY, tileImage.getPixel(srcX.floor(), srcY.floor()));
             srcX += deltaX;
             destX++;
           }

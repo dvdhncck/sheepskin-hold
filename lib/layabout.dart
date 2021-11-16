@@ -11,6 +11,8 @@ class Tile {
 
   static int nextId = 1;
 
+  static Tile NotTile = new Tile("NotTile",0,0);
+
   Tile(this.path, this.w, this.h) {
     this.id = nextId++;
     this.aspect = w.toDouble() / h.toDouble();
@@ -60,12 +62,12 @@ class Layabout {
   int gridDensity;
   int width;
   int height;
-  late double aspect;
+  late double targetAspect;
 
   // GridDensity of 2 selects a layout of the nicest fit of  2x1, 1x2 or 2x2
 
   Layabout(this.gridDensity, this.width, this.height) {
-    this.aspect = width.toDouble() / height.toDouble();
+    this.targetAspect = width.toDouble() / height.toDouble();
   }
 
   // Attempts to create the desired number of bins where each bin
@@ -139,8 +141,6 @@ class Layabout {
         return new Tuple2(lower.item1, lower.item2);
       }
     }
-    // Tuple3<int, int, double> exact = getArrangementFor(gridDensity, stack);
-    // return new Tuple2(exact.item1, exact.item2);
   }
 
   String describeAspect(double aspect) {
@@ -149,12 +149,11 @@ class Layabout {
     } else {
       return aspect > 1.0 ? "portrait" : "landscape";
     }
-    ;
   }
 
   // density of N selects a layout of the nicest fit of  NxN, NxM or MxN
   Tuple3<int, int, double> getArrangementFor(int density, List<Tile> stack) {
-    print("target aspect=$aspect");
+    print("target aspect=$targetAspect (${describeAspect(targetAspect)})");
 
     // find the average aspect of the stack
     double tileAspectSum = .0;
@@ -163,7 +162,7 @@ class Layabout {
     }
     double stackAspect = tileAspectSum / stack.length.toDouble();
 
-    print("stack tile aspect=$stackAspect (${describeAspect(aspect)})");
+    print("stack tile aspect=$stackAspect (${describeAspect(stackAspect)})");
 
     // tile arrangement will be NxM   (M can be == N)
     // if we fix one dimension as N tile, what is the 'best'' value of M?
@@ -191,9 +190,9 @@ class Layabout {
     double scaledTileAspectC = tileWidthC / tileHeightC;
 
     // score each of the possible arrangements based on how distorted the tiles are
-    var fitA = score(stackAspect, nA, mA, scaledTileAspectA);
-    var fitB = score(stackAspect, nB, mB, scaledTileAspectB);
-    var fitC = score(stackAspect, nC, mC, scaledTileAspectC);
+    var fitA = score(density, stackAspect, nA, mA, scaledTileAspectA);
+    var fitB = score(density, stackAspect, nB, mB, scaledTileAspectB);
+    var fitC = score(density, stackAspect, nC, mC, scaledTileAspectC);
 
     print("A: ${nA}x$mA (${describeAspect(scaledTileAspectA)} ... $fitA)");
     print("B: ${nB}x$mB (${describeAspect(scaledTileAspectB)} ... $fitB)");
@@ -211,12 +210,22 @@ class Layabout {
   // Return a score based on how similar the candidate arrangement
   // is to the desired one.
   // Lower scores are better
+  // if either the count in either dimension is 0, give massive score
+  // if the scaled is of the wrong aspect (portrait vs landscape), give massive score
   double score(
-      double tileAspect, int tilesV, int tilesH, double scaledTileAspect) {
+      int density, double tileAspect, int tilesV, int tilesH, double scaledTileAspect) {
     if (tilesH == 0 || tilesV == 0) {
       return double.maxFinite;
     }
-    return (tileAspect - scaledTileAspect).abs();
+    if(tileAspect < 1.0 && scaledTileAspect > 1.0) {
+      return double.maxFinite;
+    }
+    if(tileAspect > 1.0 && scaledTileAspect < 1.0) {
+      return double.maxFinite;
+    }
+    double aspectScore = (tileAspect - scaledTileAspect) * (tileAspect - scaledTileAspect);
+    double dimensionScore = (gridDensity.toDouble() - tilesV).abs() + (gridDensity.toDouble() - tilesH).abs();
+    return aspectScore + dimensionScore;
   }
 
   Bins _getBinsRequired(double tolerance, List<Tile> tiles) {
