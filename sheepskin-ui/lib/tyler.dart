@@ -17,11 +17,11 @@ class Tyler {
 
   Tyler.empty() : this(new Map());
 
-  static const platform = MethodChannel('com.quackomatic.sheepskin/tilecache');
+  static const platform = MethodChannel('com.quackomatic.sheepskin/tileCache');
 
   Future<Map<String, Tile>> notifyPathsUpdated(List<String> paths) async {
     try {
-      final List<double> result = await platform.invokeMethod('doSomething');
+      final List<double> result = await platform.invokeMethod('doThing');
       print("gosh, this is exciting: ${result}");
     } on PlatformException catch (e) {
       print("Failed to get battery level: '${e.message}'.");
