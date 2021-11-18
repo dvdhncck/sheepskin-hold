@@ -18,3 +18,11 @@
 (might be a library function, probably has to use ports to signal
 
 .- images effects - tinting, fading, etc
+
+
+-------------
+
+image scanning (on path add, remove) must happen fully backgrounded
+- and update the "images found" label with some progress, or something like that
+
+

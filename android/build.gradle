@@ -14,7 +14,7 @@ buildscript {
 allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 }
 
@@ -24,6 +24,17 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(':app')
+
+    android {
+        defaultConfig {
+            applicationId "com.quackomatic.sheepskin"
+            minSdkVersion 19
+        }
+
+        lintOptions {
+            abortOnError false
+        }
+    }
 }
 
 task clean(type: Delete) {

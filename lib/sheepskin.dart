@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sheepskin/sheepstate.dart';
 
 import 'model.dart';
+import 'tyler.dart';
 import 'wallpaperer.dart';
 
 class SheepSkin {
@@ -13,6 +14,7 @@ class SheepSkin {
   static final String unknownTime = '--:--:--';
 
   final SheepState sheepState = SheepState();
+  final Tyler tyler = Tyler.empty();
   late Function onUpdateCallback;
 
   bool displayLogMessageViewer = false;
@@ -57,9 +59,9 @@ class SheepSkin {
     return sheepState.nextChangeText;
   }
 
-  void requestImmediateChange(Function onCompletion) async {
+  void requestImmediateChange(double width, double height, Function onCompletion) async {
     sheepState.lastChangeText = formatter.format(DateTime.now());
-    Wallpaperer.changeWallpaper(sheepState, onCompletion);
+    Wallpaperer.changeWallpaper(width, height, sheepState, onCompletion);
   }
 
   void toggleLogMessageViewer() {

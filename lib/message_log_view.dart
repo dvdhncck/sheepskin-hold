@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:sheepskin/sheepstate.dart';
 
 import 'sheepskin.dart';
+import 'tyler.dart';
 
 final _random = new Random(DateTime.now().millisecondsSinceEpoch);
 
@@ -118,7 +119,7 @@ class _MessageLogViewTabState extends State<MessageLogViewTab> {
     while (amount > 0) {
       String path = makeGibberish('/');
       setState(() {
-        sheepSkin.sheepState.addPath(path);
+        sheepSkin.sheepState.addPath(new Tyler(new Map()), path);
         sheepSkin.sheepState.log('adding fake folder', path);
       });
       amount -= 1;

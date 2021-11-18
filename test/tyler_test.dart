@@ -5,9 +5,9 @@ import 'package:test/test.dart';
 
 void main() {
   test('Tyler The Creator', () async {
-    var tyler = new Tyler();
+    var tyler = Tyler.empty();
 
-    await tyler.scanDirectory('test/images');
+    await tyler.notifyPathsUpdated(['test/images']);
 
     for(var i=0;i < 10; i++) {
       // landscape(ish)

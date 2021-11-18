@@ -1,5 +1,4 @@
 import 'package:file_picker/file_picker.dart';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -26,7 +25,7 @@ class FolderPickingTab extends StatefulWidget {
 class _FolderPickingTabState extends State<FolderPickingTab> {
   void removePath(String path) {
     setState(() {
-      widget.sheepSkin.sheepState.removePath(path);
+      widget.sheepSkin.sheepState.removePath(widget.sheepSkin.tyler, path);
     });
   }
 
@@ -66,8 +65,10 @@ class _FolderPickingTabState extends State<FolderPickingTab> {
                   child: makeListGrid(
                       widget.sheepSkin.sheepState.paths,
                       columnWidth,
-                      (path) => setState(() =>
-                          {widget.sheepSkin.sheepState.removePath(path)})))
+                      (path) => setState(() => {
+                            widget.sheepSkin.sheepState
+                                .removePath(widget.sheepSkin.tyler, path)
+                          })))
             ]),
             constraints:
                 BoxConstraints(maxWidth: columnWidth, minWidth: columnWidth));
@@ -94,10 +95,10 @@ class _FolderPickingTabState extends State<FolderPickingTab> {
 
                       var onSuccess = (path) async {
                         await widget.sheepSkin.sheepState
-                            .addPath(path)
+                            .addPath(widget.sheepSkin.tyler, path)
                             .then((_) {
-                              setState(() => {});
-                              print("image count is updated");
+                          setState(() => {});
+                          print("image count is updated");
                         });
                       };
 

@@ -5,7 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'model.dart';
 import 'mr_background.dart';
-import 'wallpaperer.dart';
+import 'layabout.dart';
+import 'tyler.dart';
 
 class SheepState {
   late SharedPreferences sharedPreferences;
@@ -35,6 +36,7 @@ class SheepState {
   late DateTime nextChange;
   String lastChangeText = unknownTime;
   String nextChangeText = unknownTime;
+  late Map<String, Tile> tileCache = new Map();
 
   late List<String> logBody = [];
   late List<String> logHeader = [];
@@ -65,28 +67,36 @@ class SheepState {
     sharedPreferences.setString('lastChangeText', lastChangeText);
   }
 
-  Future<void> addPath(String path) async {
+  Future<void> addPath(Tyler tyler, String path) async {
     if (paths.contains(path)) {
       return;
     }
     paths.add(path); // todo: should assume copy-on-append
     sharedPreferences.setStringList('paths', paths);
 
-    await Wallpaperer.identifyCandidates(this).then(
-            (candidates) => setImageCount(candidates.length));
+    await tyler
+        .notifyPathsUpdated(paths)
+        .then((tileCache) => _updateTileCache(tileCache));
   }
 
-  Future<void> removePath(String path) async {
+  Future<void> removePath(Tyler tyler, String path) async {
     paths.remove(path); // todo: should assume copy-on-append
     sharedPreferences.setStringList('paths', paths);
 
-    await Wallpaperer.identifyCandidates(this).then(
-            (candidates) => setImageCount(candidates.length));
+    await tyler
+        .notifyPathsUpdated(paths)
+        .then((tileCache) => _updateTileCache(tileCache));
   }
 
-  void setImageCount(int imageCount) async {
-    this.imageCount = imageCount;
-    sharedPreferences.setInt('imageCount', imageCount);
+  void _updateTileCache(Map<String, Tile> tileCache) async {
+    List<Tile> tiles = tileCache.values.toList(growable: false);
+    sharedPreferences.setStringList(
+        "tileCachePaths", tiles.map((t) => t.path).toList());
+    sharedPreferences.setStringList(
+        "tileCacheWidths", tiles.map((t) => t.w.toString()).toList());
+    sharedPreferences.setStringList(
+        "tileCacheHeights", tiles.map((t) => t.h.toString()).toList());
+    imageCount = tiles.length;
   }
 
   void setTimeValue(TimeValue timeValue) async {
@@ -144,11 +154,28 @@ class SheepState {
       nextChange = shortFormatter.parse(lastChangeText);
     }
 
-
     if (sharedPreferences.containsKey('logDetails')) {
       logBody = sharedPreferences.getStringList("logDetails")!;
       logHeader = sharedPreferences.getStringList("logMessages")!;
       logTimestamp = sharedPreferences.getStringList("logTimestamps")!;
+    }
+
+    if (sharedPreferences.containsKey('tileCachePaths')) {
+      tileCache = new Map<String, Tile>();
+      var tileCachePaths = sharedPreferences.getStringList("tileCachePaths")!;
+      if (sharedPreferences.containsKey('tileCacheWidths')) {
+        var tileCacheWidths =
+            sharedPreferences.getStringList("tileCacheWidths")!;
+        if (sharedPreferences.containsKey('tileCacheHeights')) {
+          var tileCacheHeights =
+              sharedPreferences.getStringList("tileCacheHeights")!;
+          for (var i = 0; i < tileCachePaths.length; i++) {
+            var tile = new Tile(tileCachePaths[i],
+                int.parse(tileCacheWidths[i]), int.parse(tileCacheHeights[i]));
+            tileCache[tile.path] = tile;
+          }
+        }
+      }
     }
 
     unready = false;

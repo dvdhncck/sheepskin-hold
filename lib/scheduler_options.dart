@@ -112,7 +112,15 @@ class _SchedulingTabState extends State<SchedulingTab> {
                       content: const Text('Setting wallpaper...'),
                       duration: const Duration(seconds: 3),
                     ));
-                    widget.sheepSkin.requestImmediateChange(() =>
+                    var width = MediaQuery
+                        .of(context)
+                        .size
+                        .width;
+                    var height = MediaQuery
+                        .of(context)
+                        .size
+                        .height;
+                    widget.sheepSkin.requestImmediateChange(width, height, () =>
                         {ScaffoldMessengerState().removeCurrentSnackBar()});
                   },
                   child: Text('Change wallpaper now'))))

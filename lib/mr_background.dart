@@ -15,7 +15,10 @@ class MrBackground {
         var sheepState = SheepState.from(sharedPreferences);
         sheepState.log("Alarm fired", "Isn't that nice?");
         Wallpaperer.changeWallpaper(
-            sheepState, () => bookAlarmCall(sheepState));
+            700, //MediaQuery.of(context).size.width,
+            700, //MediaQuery.of(context).size.height,
+            sheepState,
+            () => bookAlarmCall(sheepState));
 
         sheepState.log(
             "Alarm scheduled.", "Will do a sanity check in 1 minute.");
@@ -27,8 +30,7 @@ class MrBackground {
 
   static void monitorAlarmState(SheepState sheepState, int retries) {
     if (retries == 0) {
-      sheepState.log(
-          "Alarm checking abandoned.", "Too many retries.");
+      sheepState.log("Alarm checking abandoned.", "Too many retries.");
     }
 
     Future.delayed(Duration(minutes: 1), () {
@@ -37,12 +39,10 @@ class MrBackground {
             "Alarm ${sheepState.nextChangeText} is in the past");
         monitorAlarmState(sheepState, retries - 1);
       } else {
-        sheepState.log(
-            "Alarm is good.", "Scheduled for future, which is good");
+        sheepState.log("Alarm is good.", "Scheduled for future, which is good");
       }
     });
   }
-
 
   static void _scheduleAlarm(SheepState sheepState) async {
     int count = sheepState.timeValue.value;

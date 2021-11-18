@@ -33,16 +33,20 @@ dependencies:
 
   #filesystem_picker:
   #  path: "/workspace/filesystem_picker/package/"
-  file_picker: ^4.0.2
+  file_picker: ^4.2.3
 
   tuple: ^2.0.0
   #path_provider_ex: ^1.0.1
-  #path_provider: 2.0.2
+  path_provider: 2.0.7
 
   shared_preferences: ^2.0.5
   mime: ^1.0.0
   intl: ^0.17.0
   android_alarm_manager_plus: ^2.0.3
+
+  wallpaper: ^1.0.7
+
+  local_image_provider: ^4.0.1
 
 dev_dependencies:
   test: 1.19.3
